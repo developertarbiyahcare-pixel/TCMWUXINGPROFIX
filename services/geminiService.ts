@@ -248,7 +248,17 @@ export const sendMessageToGeminiStream = async (
       lastError = error;
 
       const errMsg = error.message?.toLowerCase() || "";
-      if (errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("limit") || errMsg.includes("403")) {
+      const errStatus = error.status || "";
+      const errCode = error.code || 0;
+
+      // Check for permission denied (403 or PERMISSION_DENIED)
+      if (errCode === 403 || errMsg.includes("403") || errMsg.includes("permission_denied") || errMsg.includes("permission denied")) {
+        // Skip this key and try next one. If it's the last key, it will throw.
+        if (onKeyExhausted) onKeyExhausted(apiKey);
+        continue;
+      }
+
+      if (errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("limit")) {
         if (onKeyExhausted) onKeyExhausted(apiKey);
         continue; 
       } else if (errMsg.includes("api key not found") || errMsg.includes("invalid api key")) {
