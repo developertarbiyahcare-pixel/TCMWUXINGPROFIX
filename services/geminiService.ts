@@ -88,8 +88,8 @@ export const sendMessageToGeminiStream = async (
       const result = await ai.models.generateContent({
         model: 'gemini-1.5-flash',
         contents: contents,
-        config: {
-          systemInstruction: getSystemInstruction(language, cdssAnalysis),
+        systemInstruction: getSystemInstruction(language, cdssAnalysis),
+        generationConfig: {
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -183,7 +183,7 @@ export const sendMessageToGeminiStream = async (
         }
       });
 
-      const response = result.response;
+      const response = await result.response;
       let rawText: string | undefined = "";
       try {
         rawText = response.text();
@@ -194,9 +194,16 @@ export const sendMessageToGeminiStream = async (
           throw new Error("Konten diblokir oleh filter keamanan AI. Silakan coba kata-kata lain.");
         }
         if (candidate?.finishReason === 'MAX_TOKENS') {
-          throw new Error("Respon terlalu panjang dan terpotong. Silakan coba pertanyaan yang lebih spesifik.");
+          // If max tokens hit, try to extract whatever we have
+          const parts = candidate.content?.parts;
+          if (parts && parts.length > 0) {
+            rawText = parts.map(p => p.text).join("");
+          } else {
+            throw new Error("Respon terlalu panjang dan terpotong. Silakan coba pertanyaan yang lebih spesifik.");
+          }
+        } else {
+          throw new Error("Gagal mengambil respon dari AI.");
         }
-        throw new Error("Gagal mengambil respon dari AI.");
       }
 
       if (!rawText) {
