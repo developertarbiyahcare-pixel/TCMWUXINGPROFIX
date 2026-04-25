@@ -2,12 +2,13 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
+import { GoogleGenAI } from "@google/genai";
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
 
   // Initialize SQLite database
   const db = await open({
@@ -50,6 +51,36 @@ async function startServer() {
   }
 
   // --- API Routes ---
+
+  // Gemini Proxy
+  app.post("/api/gemini", async (req, res) => {
+    const { contents, systemInstruction, model, responseSchema } = req.body;
+    const apiKey = process.env.GEMINI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
+    }
+
+    try {
+      const genAI = new GoogleGenAI({ apiKey });
+      
+      const response = await genAI.models.generateContent({
+        model: model || "gemini-1.5-flash",
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+          responseMimeType: "application/json",
+          responseSchema: responseSchema
+        }
+      });
+
+      const responseText = response.text;
+      res.json({ text: responseText });
+    } catch (error: any) {
+      console.error("Gemini Proxy Error:", error);
+      res.status(500).json({ error: error.message || "Failed to call Gemini API" });
+    }
+  });
 
   // Users API
   app.get("/api/users", async (req, res) => {

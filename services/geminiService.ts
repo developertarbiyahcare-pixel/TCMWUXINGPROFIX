@@ -31,11 +31,149 @@ export const sendMessageToGeminiStream = async (
   onChunk?: (text: string) => void,
   onKeyExhausted?: (key: string) => void
 ) => {
+  // --- SERVER-SIDE PROXY ATTEMPT ---
+  // Try calling the server-side proxy first if no manual keys are provided or as a fallback
+  try {
+    const parts: any[] = [{ text: message }];
+    if (image) {
+      const mimeType = image.split(';')[0].split(':')[1];
+      const base64Data = image.split(',')[1];
+      parts.push({
+        inlineData: {
+          mimeType,
+          data: base64Data
+        }
+      });
+    }
+
+    const historyParts = history
+      .filter(msg => (msg.role === 'user' || msg.role === 'model') && !msg.isError)
+      .slice(-6)
+      .map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text.substring(0, 1000) }]
+      }));
+
+    const contents = [
+      ...historyParts,
+      { role: 'user', parts }
+    ];
+
+    const responseSchema = {
+      type: Type.OBJECT,
+      properties: {
+        conversationalResponse: { type: Type.STRING },
+        diagnosis: {
+          type: Type.OBJECT,
+          properties: {
+            patternId: { type: Type.STRING },
+            explanation: { type: Type.STRING },
+            differentiation: {
+              type: Type.OBJECT,
+              properties: {
+                ben: { 
+                  type: Type.ARRAY, 
+                  items: { 
+                    type: Type.OBJECT,
+                    properties: {
+                      label: { type: Type.STRING },
+                      value: { type: Type.STRING },
+                      score: { type: Type.NUMBER }
+                    }
+                  }
+                },
+                biao: { 
+                  type: Type.ARRAY, 
+                  items: { 
+                    type: Type.OBJECT,
+                    properties: {
+                      label: { type: Type.STRING },
+                      value: { type: Type.STRING },
+                      score: { type: Type.NUMBER }
+                    }
+                  }
+                }
+              }
+            },
+            treatment_principle: { type: Type.ARRAY, items: { type: Type.STRING } },
+            classical_prescription: { type: Type.STRING },
+            recommendedPoints: { 
+              type: Type.ARRAY, 
+              items: { 
+                type: Type.OBJECT,
+                properties: {
+                  code: { type: Type.STRING },
+                  description: { type: Type.STRING }
+                }
+              }
+            },
+            masterTungPoints: { 
+              type: Type.ARRAY, 
+              items: { 
+                type: Type.OBJECT,
+                properties: {
+                  code: { type: Type.STRING },
+                  description: { type: Type.STRING }
+                }
+              }
+            },
+            wuxingElement: { type: Type.STRING },
+            wuxingRelationships: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  type: { type: Type.STRING },
+                  targetElement: { type: Type.STRING },
+                  description: { type: Type.STRING }
+                }
+              }
+            },
+            lifestyleAdvice: { type: Type.STRING },
+            herbal_recommendation: { 
+              type: Type.OBJECT,
+              properties: {
+                formula_name: { type: Type.STRING },
+                chief: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            obesity_indication: { type: Type.STRING },
+            beauty_acupuncture: { type: Type.STRING },
+            keySymptoms: { type: Type.ARRAY, items: { type: Type.STRING } },
+            tongueDescription: { type: Type.STRING },
+            pulseDescription: { type: Type.STRING }
+          }
+        }
+      }
+    };
+
+    const proxyResponse = await fetch('/api/gemini', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: getSystemInstruction(language, cdssAnalysis),
+        model: "gemini-1.5-flash",
+        responseSchema: responseSchema
+      })
+    });
+
+    if (proxyResponse.ok) {
+      const result = await proxyResponse.json();
+      if (onChunk) onChunk(result.text);
+      return { data: JSON.parse(result.text) };
+    } else {
+      console.warn("Server-side Gemini proxy failed. Falling back to client-side logic.");
+    }
+  } catch (error) {
+    console.warn("Server-side Gemini proxy error:", error);
+  }
+
+  // --- CLIENT-SIDE FALLBACK ---
   const availableKeys = [...(apiKeys || []).filter(k => !k.isExhausted && k.key.trim() !== "")];
   
   // Try multiple sources for the environment key
   const envKey = 
-    (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined) || 
     (import.meta.env?.VITE_GEMINI_API_KEY) || 
     ((window as any).GEMINI_API_KEY);
 
