@@ -83,13 +83,24 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 }
 
 const App: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<UserAccount>(DEFAULT_ADMIN);
-  const [isAuthReady, setIsAuthReady] = useState(true);
+  const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [settings, setPengaturan] = useState<AppSettings | null>(null);
 
   useEffect(() => {
-    console.log("APP: Current Pengaturan State:", settings);
-  }, [settings]);
+    const loadSession = async () => {
+      const saved = localStorage.getItem('tcm_active_session');
+      if (saved) {
+        try {
+          setCurrentUser(JSON.parse(saved));
+        } catch (e) {
+          localStorage.removeItem('tcm_active_session');
+        }
+      }
+      setIsAuthReady(true);
+    };
+    loadSession();
+  }, []);
 
   const handleResetKeys = async () => {
     if (!settings) return;
@@ -286,13 +297,15 @@ const App: React.FC = () => {
   if (!isAuthReady) {
     return (
       <div className="min-h-screen bg-purple-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-tcm-primary animate-spin" />
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-tcm-primary animate-spin" />
+          <p className="text-[10px] font-black uppercase tracking-widest text-purple-400">Loading Session...</p>
+        </div>
       </div>
     );
   }
 
-  // Removed LoginScreen check
-  // if (!currentUser) return <LoginScreen onLoginBerhasil={setCurrentUser} />;
+  if (!currentUser) return <LoginScreen onLoginBerhasil={setCurrentUser} />;
 
   const SidebarTab = ({ id, label, icon: Icon }: { id: typeof activePanel, label: string, icon: any }) => {
     const isActive = activePanel === id;
@@ -350,6 +363,17 @@ const App: React.FC = () => {
            )}
            <button onClick={() => setIsFormOpen(true)} className="w-full py-3.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-purple-700 transition-all shadow-md shadow-purple-100 active:scale-95 flex items-center justify-center gap-2">
              <ClipboardList className="w-4 h-4" /> {appLanguage === Language.ENGLISH ? "Pendaftaran Pasien Baru" : "Input Pasien Baru"}
+           </button>
+           <button 
+             onClick={async () => {
+               const { logout } = await import('./services/authService');
+               await logout();
+               setCurrentUser(null);
+               localStorage.removeItem('tcm_active_session');
+             }} 
+             className="w-full py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+           >
+             Keluar / Logout
            </button>
         </div>
       </div>
