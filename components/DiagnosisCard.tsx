@@ -22,6 +22,7 @@ const DiagnosisCard: React.FC<Props> = ({ diagnosis, isPregnant, onShowVisualize
   const [isSaved, setIsSaved] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [showFullBianZheng, setShowFullBianZheng] = useState(false);
+  const [showWuXingTable, setShowWuXingTable] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
 
   if (!diagnosis) return null;
@@ -191,6 +192,48 @@ ${diagnosis.lifestyleAdvice}
            </div>
         </div>
 
+        {/* KEY SYMPTOMS + TONGUE & PULSE (ALWAYS VISIBLE) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Key Symptoms */}
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm">
+            <h4 className="font-black text-amber-700 uppercase text-xs mb-3 tracking-widest flex items-center gap-2">
+              <Sparkles className="w-3 h-3" /> Gejala Kunci
+            </h4>
+            <ul className="space-y-2 text-sm">
+              {diagnosis.keySymptoms && diagnosis.keySymptoms.length > 0 ? (
+                diagnosis.keySymptoms.map((sym, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-amber-500 font-bold">•</span>
+                    <span className="text-amber-900 font-medium">{sym}</span>
+                  </li>
+                ))
+              ) : (
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-500">•</span>
+                  <span className="text-amber-900 italic opacity-60">Tidak ada gejala kunci spesifik.</span>
+                </li>
+              )}
+            </ul>
+          </div>
+
+          {/* Lidah & Nadi */}
+          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 shadow-sm">
+            <h4 className="font-black text-emerald-700 uppercase text-xs mb-3 tracking-widest flex items-center gap-2">
+              <Activity className="w-3 h-3" /> Lidah & Nadi
+            </h4>
+            <div className="text-sm space-y-3">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-emerald-600 shrink-0">Lidah:</span> 
+                <span className="text-emerald-800 font-medium">{diagnosis.tongueDescription || "Normal"}</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-emerald-600 shrink-0">Nadi:</span> 
+                <span className="text-emerald-800 font-medium">{diagnosis.pulseDescription || "Normal"}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* === ANALISA WU XING LENGKAP (BARU & DETAIL) === */}
         <div className="mb-8 bg-gradient-to-br from-purple-50 to-amber-50 border border-purple-200 rounded-3xl p-7">
           <div className="flex items-center gap-3 mb-5">
@@ -239,154 +282,92 @@ ${diagnosis.lifestyleAdvice}
         </div>
 
         {/* TABEL LENGKAP WU XING POINTS (BARU) */}
-        <div className="mb-8 border border-purple-200 rounded-3xl p-6 bg-white">
-          <div className="flex items-center justify-between mb-5">
-            <h4 className="font-black text-purple-700 text-lg flex items-center gap-2">
-              <Activity className="w-5 h-5" />
-              Tabel Lengkap Titik Wu Xing Spesifik
-            </h4>
-            <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">Berdasarkan PDF 2020</span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs border-collapse">
-              <thead>
-                <tr className="bg-purple-100">
-                  <th className="p-3 text-left font-bold text-purple-700">Meridian</th>
-                  <th className="p-3 text-center font-bold text-emerald-600">Jing Well</th>
-                  <th className="p-3 text-center font-bold text-amber-600">Ying Spring</th>
-                  <th className="p-3 text-center font-bold text-purple-600">Shu Stream</th>
-                  <th className="p-3 text-center font-bold text-blue-600">Jing River</th>
-                  <th className="p-3 text-center font-bold text-rose-600">He Sea</th>
-                  <th className="p-3 text-center font-bold">Yuan Source</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y">
-                {/* Yin Meridians */}
-                <tr className="bg-emerald-50">
-                  <td className="p-3 font-semibold">LU (Lung)</td>
-                  <td className="p-3 text-center">11</td>
-                  <td className="p-3 text-center">10</td>
-                  <td className="p-3 text-center">9</td>
-                  <td className="p-3 text-center">8</td>
-                  <td className="p-3 text-center">5</td>
-                  <td className="p-3 text-center font-bold">LU 9</td>
-                </tr>
-                <tr className="bg-emerald-50">
-                  <td className="p-3 font-semibold">PC (Pericardium)</td>
-                  <td className="p-3 text-center">9</td>
-                  <td className="p-3 text-center">8</td>
-                  <td className="p-3 text-center">7</td>
-                  <td className="p-3 text-center">5</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center font-bold">PC 7</td>
-                </tr>
-                <tr className="bg-emerald-50">
-                  <td className="p-3 font-semibold">HT (Heart)</td>
-                  <td className="p-3 text-center">9</td>
-                  <td className="p-3 text-center">8</td>
-                  <td className="p-3 text-center">7</td>
-                  <td className="p-3 text-center">4</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center font-bold">HT 7</td>
-                </tr>
-                <tr className="bg-emerald-50">
-                  <td className="p-3 font-semibold">SP (Spleen)</td>
-                  <td className="p-3 text-center">1</td>
-                  <td className="p-3 text-center">2</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center">5</td>
-                  <td className="p-3 text-center">9</td>
-                  <td className="p-3 text-center font-bold">SP 3</td>
-                </tr>
-                <tr className="bg-emerald-50">
-                  <td className="p-3 font-semibold">KI (Kidney)</td>
-                  <td className="p-3 text-center">1</td>
-                  <td className="p-3 text-center">2</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center">7</td>
-                  <td className="p-3 text-center">10</td>
-                  <td className="p-3 text-center font-bold">KI 3</td>
-                </tr>
-                <tr className="bg-emerald-50">
-                  <td className="p-3 font-semibold">LR (Liver)</td>
-                  <td className="p-3 text-center">1</td>
-                  <td className="p-3 text-center">2</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center">4</td>
-                  <td className="p-3 text-center">8</td>
-                  <td className="p-3 text-center font-bold">LR 3</td>
-                </tr>
-
-                {/* Yang Meridians */}
-                <tr className="bg-amber-50">
-                  <td className="p-3 font-semibold">LI (Large Intestine)</td>
-                  <td className="p-3 text-center">1</td>
-                  <td className="p-3 text-center">2</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center">5</td>
-                  <td className="p-3 text-center">11</td>
-                  <td className="p-3 text-center font-bold">LI 4</td>
-                </tr>
-                <tr className="bg-amber-50">
-                  <td className="p-3 font-semibold">ST (Stomach)</td>
-                  <td className="p-3 text-center">45</td>
-                  <td className="p-3 text-center">44</td>
-                  <td className="p-3 text-center">43</td>
-                  <td className="p-3 text-center">41</td>
-                  <td className="p-3 text-center">36</td>
-                  <td className="p-3 text-center font-bold">ST 42</td>
-                </tr>
-                <tr className="bg-amber-50">
-                  <td className="p-3 font-semibold">SI (Small Intestine)</td>
-                  <td className="p-3 text-center">1</td>
-                  <td className="p-3 text-center">2</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center">5</td>
-                  <td className="p-3 text-center">8</td>
-                  <td className="p-3 text-center font-bold">SI 4</td>
-                </tr>
-                <tr className="bg-amber-50">
-                  <td className="p-3 font-semibold">TE (Triple Energizer)</td>
-                  <td className="p-3 text-center">1</td>
-                  <td className="p-3 text-center">2</td>
-                  <td className="p-3 text-center">3</td>
-                  <td className="p-3 text-center">6</td>
-                  <td className="p-3 text-center">10</td>
-                  <td className="p-3 text-center font-bold">TE 4</td>
-                </tr>
-                <tr className="bg-amber-50">
-                  <td className="p-3 font-semibold">GB (Gallbladder)</td>
-                  <td className="p-3 text-center">44</td>
-                  <td className="p-3 text-center">43</td>
-                  <td className="p-3 text-center">41</td>
-                  <td className="p-3 text-center">38</td>
-                  <td className="p-3 text-center">34</td>
-                  <td className="p-3 text-center font-bold">GB 40</td>
-                </tr>
-                <tr className="bg-amber-50">
-                  <td className="p-3 font-semibold">BL (Bladder)</td>
-                  <td className="p-3 text-center">67</td>
-                  <td className="p-3 text-center">66</td>
-                  <td className="p-3 text-center">65</td>
-                  <td className="p-3 text-center">60</td>
-                  <td className="p-3 text-center">40</td>
-                  <td className="p-3 text-center font-bold">BL 64</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div className="mt-6 text-xs flex items-center gap-6 text-purple-500">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-yellow-300 rounded"></div>
-              <span>Titik Ibu = Tonik</span>
+        <div className="mb-8 border border-purple-200 rounded-3xl overflow-hidden bg-white shadow-sm transition-all duration-300">
+          <div 
+            onClick={() => setShowWuXingTable(!showWuXingTable)}
+            className="flex items-center justify-between p-6 bg-purple-50/50 cursor-pointer hover:bg-purple-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl transition-all ${showWuXingTable ? 'bg-purple-600 text-white shadow-lg' : 'bg-white text-purple-600 border border-purple-100'}`}>
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <h4 className="font-black text-purple-900 text-base leading-tight">
+                  Tabel Lengkap Titik Wu Xing Spesifik
+                </h4>
+                <p className="text-[10px] text-purple-500 font-bold uppercase tracking-widest mt-0.5">Berdasarkan PDF 2020</p>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-purple-300 rounded"></div>
-              <span>Titik Anak = Sedasi</span>
-            </div>
+            
+            <button className="flex items-center gap-2 px-4 py-2 bg-white border border-purple-200 rounded-xl font-bold text-xs text-purple-600 shadow-sm transition-all active:scale-95">
+              {showWuXingTable ? (
+                <><ChevronUp className="w-4 h-4" /> Simpan Tabel</>
+              ) : (
+                <><ChevronDown className="w-4 h-4" /> Tampilkan Tabel</>
+              )}
+            </button>
           </div>
+
+          {showWuXingTable && (
+            <div className="p-6 border-t border-purple-100 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div className="overflow-x-auto rounded-2xl border border-purple-100">
+                <table className="w-full text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-purple-100">
+                      <th className="p-3 text-left font-bold text-purple-700 border-b border-purple-200">Meridian</th>
+                      <th className="p-3 text-center font-bold text-emerald-600 border-b border-purple-200">Jing Well</th>
+                      <th className="p-3 text-center font-bold text-amber-600 border-b border-purple-200">Ying Spring</th>
+                      <th className="p-3 text-center font-bold text-purple-600 border-b border-purple-200">Shu Stream</th>
+                      <th className="p-3 text-center font-bold text-blue-600 border-b border-purple-200">Jing River</th>
+                      <th className="p-3 text-center font-bold text-rose-600 border-b border-purple-200">He Sea</th>
+                      <th className="p-3 text-center font-bold text-purple-900 border-b border-purple-200">Yuan Source</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-purple-50">
+                    {/* Yin Meridians */}
+                    {[
+                      { name: 'LU (Lung)', pts: ['11', '10', '9', '8', '5', 'LU 9'], className: 'bg-emerald-50/30' },
+                      { name: 'PC (Pericardium)', pts: ['9', '8', '7', '5', '3', 'PC 7'], className: 'bg-emerald-50/30' },
+                      { name: 'HT (Heart)', pts: ['9', '8', '7', '4', '3', 'HT 7'], className: 'bg-emerald-50/30' },
+                      { name: 'SP (Spleen)', pts: ['1', '2', '3', '5', '9', 'SP 3'], className: 'bg-emerald-50/30' },
+                      { name: 'KI (Kidney)', pts: ['1', '2', '3', '7', '10', 'KI 3'], className: 'bg-emerald-50/30' },
+                      { name: 'LR (Liver)', pts: ['1', '2', '3', '4', '8', 'LR 3'], className: 'bg-emerald-50/30' },
+                      { name: 'LI (Large Intestine)', pts: ['1', '2', '3', '5', '11', 'LI 4'], className: 'bg-amber-50/30' },
+                      { name: 'ST (Stomach)', pts: ['45', '44', '43', '41', '36', 'ST 42'], className: 'bg-amber-50/30' },
+                      { name: 'SI (Small Intestine)', pts: ['1', '2', '3', '5', '8', 'SI 4'], className: 'bg-amber-50/30' },
+                      { name: 'TE (Triple Energizer)', pts: ['1', '2', '3', '6', '10', 'TE 4'], className: 'bg-amber-50/30' },
+                      { name: 'GB (Gallbladder)', pts: ['44', '43', '41', '38', '34', 'GB 40'], className: 'bg-amber-50/30' },
+                      { name: 'BL (Bladder)', pts: ['67', '66', '65', '60', '40', 'BL 64'], className: 'bg-amber-50/30' },
+                    ].map((row, idx) => (
+                      <tr key={idx} className={`${row.className} hover:bg-white transition-colors`}>
+                        <td className="p-3 font-semibold text-purple-900 border-r border-purple-50">{row.name}</td>
+                        {row.pts.map((pt, pIdx) => (
+                          <td key={pIdx} className={`p-3 text-center ${pIdx === 5 ? 'font-black text-purple-700' : ''}`}>
+                            {pt}
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-emerald-50 text-emerald-600 rounded border border-emerald-200"></div>
+                  <span className="text-[10px] font-bold text-emerald-700 uppercase">Yin Meridian</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-amber-50 text-amber-600 rounded border border-amber-200"></div>
+                  <span className="text-[10px] font-bold text-amber-700 uppercase">Yang Meridian</span>
+                </div>
+                <div className="flex items-center gap-2 ml-auto">
+                  <div className="w-3 h-3 bg-purple-600 rounded-sm"></div>
+                  <span className="text-[10px] font-bold text-purple-600 uppercase">Yuan Source = Titik Penguat</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* QR CODE SECTION */}
@@ -438,44 +419,6 @@ ${diagnosis.lifestyleAdvice}
         {/* DETAIL BIAN ZHENG LENGKAP */}
         {showFullBianZheng && (
           <div className="space-y-8 border border-purple-100 rounded-3xl p-6 bg-purple-50/70 mb-8 print:bg-white print:border-none print:p-0 print:mb-6">
-
-        {/* KEY SYMPTOMS + TONGUE & PULSE */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          {/* Key Symptoms */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-            <h4 className="font-black text-amber-700 uppercase text-xs mb-3">Gejala Kunci</h4>
-            <ul className="space-y-2 text-sm">
-              {diagnosis.keySymptoms && diagnosis.keySymptoms.length > 0 ? (
-                diagnosis.keySymptoms.map((sym, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-amber-500">•</span>
-                    <span className="text-amber-900">{sym}</span>
-                  </li>
-                ))
-              ) : (
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-500">•</span>
-                  <span className="text-amber-900 italic">Tidak ada gejala kunci spesifik yang dicatat.</span>
-                </li>
-              )}
-            </ul>
-          </div>
-
-          {/* Lidah & Nadi */}
-          <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-5">
-            <h4 className="font-black text-emerald-700 uppercase text-xs mb-3">Lidah & Nadi</h4>
-            <div className="text-sm space-y-3">
-              <div>
-                <span className="font-bold text-emerald-600">Lidah:</span> 
-                <span className="ml-2 text-emerald-800">{diagnosis.tongueDescription || "Normal"}</span>
-              </div>
-              <div>
-                <span className="font-bold text-emerald-600">Nadi:</span> 
-                <span className="ml-2 text-emerald-800">{diagnosis.pulseDescription || "Normal"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* TREATMENT PRINCIPLE */}
         {(diagnosis.treatment_principle && diagnosis.treatment_principle.length > 0) && (
