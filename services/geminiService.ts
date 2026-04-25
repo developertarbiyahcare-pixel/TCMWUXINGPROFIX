@@ -185,7 +185,7 @@ export const sendMessageToGeminiStream = async (
 
       let rawText = "";
       try {
-        rawText = response.text;
+        rawText = response.text();
       } catch (e) {
         console.error("Error getting response text:", e);
         const candidate = response.candidates?.[0];

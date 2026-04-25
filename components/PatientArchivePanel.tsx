@@ -8,8 +8,6 @@ import {
   PlusCircle, MinusCircle, AlertCircle, Clock, History, BarChart3, ShieldAlert, RefreshCw,
   Phone, Mail
 } from 'lucide-react';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { db as firestore, auth } from '../firebase';
 
 interface Props {
   onLoadPatient: (patient: SavedPatient) => void;

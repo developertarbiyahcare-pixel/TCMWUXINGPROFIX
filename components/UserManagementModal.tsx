@@ -3,9 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { X, UserPlus, Trash2, Shield, User, AlertCircle, Save, Settings, Database, Key, MapPin, Phone, Zap } from 'lucide-react';
 import { UserAccount, AppSettings, ApiKeyEntry } from '../types';
 import { db } from '../services/db';
-import { collection, query, onSnapshot } from 'firebase/firestore';
-import { db as firestore, auth } from '../firebase';
-import { updatePassword } from 'firebase/auth';
 
 interface Props {
   isOpen: boolean;
@@ -195,19 +192,13 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose, currentUser }) 
 
     setIsChangingPassword(true);
     try {
-      if (auth.currentUser) {
-        await updatePassword(auth.currentUser, newOwnPassword);
-        await db.users.add({ ...currentUser, password: '' }); 
-      } else {
-        const updatedUser = { ...currentUser, password: newOwnPassword };
-        const result = await db.users.add(updatedUser);
-        if (!result) throw new Error("Gagal mengubah password.");
-      }
+      const updatedUser = { ...currentUser, password: newOwnPassword };
+      const result = await db.users.add(updatedUser);
+      if (!result) throw new Error("Gagal mengubah password.");
 
       setBerhasilMsg('Password berhasil diubah. Silakan login kembali.');
       setTimeout(() => {
         localStorage.removeItem('tcm_active_session');
-        if (auth.currentUser) auth.signOut();
         window.location.reload();
       }, 2000);
     } catch (e: any) {
@@ -235,9 +226,6 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose, currentUser }) 
       const result = await db.users.delete(uid);
       if (result) {
         localStorage.removeItem('tcm_active_session');
-        if (auth.currentUser) {
-          await auth.currentUser.delete();
-        }
         window.location.reload();
       } else {
         setError("Gagal menghapus akun.");

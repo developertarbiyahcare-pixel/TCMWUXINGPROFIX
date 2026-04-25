@@ -5,7 +5,6 @@ import { Language, ChatMessage, ScoredSyndrome, UserAccount, TcmDiagnosisResult,
 import { sendMessageToGeminiStream } from './services/geminiService';
 import { analyzePatient } from './services/tcmLogic';
 import { db, DEFAULT_ADMIN } from './services/db';
-import { auth, onAuthStateChanged } from './firebase';
 import DiagnosisCard from './components/DiagnosisCard';
 import PatientFormModal from './components/PatientFormModal';
 import WuXingVisualizerModal from './components/WuXingVisualizerModal';
@@ -129,37 +128,8 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        // Sync with existing user matching logic if any, 
-        // or just set a minimal profile for now.
-        // The app seems to have its own UserAccount type.
-        const syncUser = async () => {
-          const registeredUsers = await db.users.getAll();
-          const match = registeredUsers.find(u => u.uid === user.uid);
-          if (match) {
-            setCurrentUser(match);
-          } else {
-             // Default profile if newly signed in via Google but not in patients/users db yet
-             setCurrentUser({
-               uid: user.uid,
-               username: user.displayName || user.email?.split('@')[0] || 'User',
-               password: '',
-               role: 'REGULAR',
-               createdAt: Date.now()
-             });
-          }
-           setIsAuthReady(true);
-        };
-        syncUser();
-      } else {
-        // We might want to keep DEFAULT_ADMIN for dev or force login
-        // For now, let's allow it to be null if not signed in, which might show login screen
-        // setCurrentUser(null as any); 
-        setIsAuthReady(true);
-      }
-    });
-    return () => unsubscribe();
+    // Auth is ready immediately in local mode
+    setIsAuthReady(true);
   }, []);
 
 
@@ -389,10 +359,10 @@ const App: React.FC = () => {
         <header className="p-4 bg-white/50 border-b border-purple-100 flex justify-between items-center backdrop-blur-md z-30">
            <div className="flex items-center gap-4">
              <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 bg-purple-100 rounded-lg text-purple-900"><Menu className="w-5 h-5" /></button>
-             <div className="flex items-center gap-2 px-3 py-1 bg-purple-100/50 rounded-full border border-purple-200">
-                <div className="w-2 h-2 rounded-full bg-fuchsia-500 animate-pulse"></div>
-                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-purple-500">
-                  Cloud Sync
+             <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                  Local Mode
                 </span>
              </div>
            </div>

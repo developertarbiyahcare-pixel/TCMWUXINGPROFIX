@@ -1,7 +1,6 @@
 
 import { UserAccount } from '../types';
 import { db as localDb } from './db';
-import { auth, signInWithPopup, googleProvider, signOut } from '../firebase';
 
 // Ensure DB is initialized
 export const getUsers = async (): Promise<UserAccount[]> => {
@@ -36,36 +35,12 @@ export const deleteUser = async (username: string): Promise<{ success: boolean, 
 };
 
 export const loginWithGoogle = async (): Promise<UserAccount | null> => {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    const user = result.user;
-    
-    if (user) {
-      const userAccount: UserAccount = {
-        uid: user.uid,
-        username: user.displayName || user.email || 'User',
-        password: '', // Don't store password in memory
-        role: 'REGULAR',
-        createdAt: new Date(user.metadata.creationTime || Date.now()).getTime()
-      };
-      
-      // Save to local db for management
-      await localDb.users.add(userAccount);
-      return userAccount;
-    }
-    return null;
-  } catch (error: any) {
-    console.error("Firebase Login Error:", error);
-    throw error;
-  }
+  console.warn("Google Login is disabled (Firebase removed)");
+  return null;
 };
 
 export const logout = async (): Promise<void> => {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error("Firebase Logout Error:", error);
-  }
+  localStorage.removeItem('tcm_active_session');
 };
 
 // Legacy login for local storage fallback
@@ -76,7 +51,14 @@ export const login = async (email: string, password: string): Promise<UserAccoun
 };
 
 export const register = async (email: string, password: string, fullName: string): Promise<{ success: boolean, message: string }> => {
-  const ok = await localDb.users.register({ username: email, password });
+  const newUser: UserAccount = {
+    uid: Date.now().toString(),
+    username: email,
+    password: password,
+    role: 'REGULAR',
+    createdAt: Date.now()
+  };
+  const ok = await localDb.users.add(newUser);
   return ok ? { success: true, message: 'Registrasi berhasil!' } : { success: false, message: 'Registrasi gagal.' };
 };
 
