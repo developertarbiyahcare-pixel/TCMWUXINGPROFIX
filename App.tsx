@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, Component, ErrorInfo, ReactNode } from 'react';
 import { Send, Activity, MessageSquare, Stethoscope, Archive, Compass, GraduationCap, Shield, ClipboardList, Loader2, Menu, X, LayoutGrid, Scale, Paperclip, Image as ImageIcon, Zap, ChevronDown, ChevronRight, AlertCircle, History, UserPlus, LogOut, Settings, User, Globe } from 'lucide-react';
-import { Language, ChatMessage, UserAccount, TcmDiagnosisResult, AppSettings } from './types';
+import { Language, ChatMessage, UserAccount, TcmDiagnosisResult, AppSettings, ScoredSyndrome } from './types';
 import { sendMessageToGeminiStream } from './services/geminiService';
 import { analyzePatient } from './services/tcmLogic';
 import { db, DEFAULT_ADMIN } from './services/db';

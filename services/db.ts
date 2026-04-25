@@ -1,6 +1,6 @@
 import { UserAccount, SavedPatient, AppSettings } from '../types';
 import { db as firestore, auth } from '../firebase';
-import { collection, doc, setDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, doc, setDoc, deleteDoc, getDocs, getDoc, query, where } from 'firebase/firestore';
 
 export enum OperationType {
   CREATE = 'create',
