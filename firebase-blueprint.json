@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile document",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "username": { "type": "string" },
+        "role": { "type": "string", "enum": ["ADMIN", "REGULAR"] },
+        "createdAt": { "type": "number" },
+        "provider": { "type": "string" }
+      },
+      "required": ["uid", "username", "role", "createdAt"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient record with diagnosis",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "patientName": { "type": "string" },
+        "age": { "type": "string" },
+        "sex": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "authorUid", "patientName", "timestamp"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/patients/{patientId}": {
+      "schema": "Patient",
+      "description": "Patient records"
+    }
+  }
+}

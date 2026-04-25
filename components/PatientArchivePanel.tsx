@@ -2,6 +2,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { db } from '../services/db';
 import { SavedPatient } from '../types';
+import { auth, db as firestore } from '../firebase';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { 
   Search, Trash2, User, Calendar, FileText, ChevronRight, Activity, X, RotateCcw, 
   BrainCircuit, MapPin, Stethoscope, Pill, Clipboard, TrendingUp, CheckCircle2, 
@@ -20,12 +22,45 @@ const PatientArchivePanel: React.FC<Props> = ({ onLoadPatient }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
-    // Replaced Firebase onSnapshot with our standard db.patients.getAll fallback loader
-    const fetchPatients = async () => {
+    // Initial load from local/cache
+    const fetchPatientsInit = async () => {
       const data = await db.patients.getAll();
       setPatients(data);
     };
-    fetchPatients();
+    fetchPatientsInit();
+
+    // Listen for real-time updates if logged in
+    let unsubscribe: (() => void) | undefined;
+    
+    if (auth.currentUser) {
+      const q = query(
+        collection(firestore, 'patients'), 
+        where('authorUid', '==', auth.currentUser.uid)
+      );
+      
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        const cloudPatients = snapshot.docs.map(doc => doc.data() as SavedPatient);
+        // Merge with local state
+        setPatients(prev => {
+          const merged = [...prev];
+          cloudPatients.forEach(cp => {
+            const index = merged.findIndex(p => p.id === cp.id);
+            if (index === -1) {
+              merged.push(cp);
+            } else if (cp.timestamp > merged[index].timestamp) {
+              merged[index] = cp;
+            }
+          });
+          return merged.sort((a, b) => b.timestamp - a.timestamp);
+        });
+      }, (error) => {
+        console.error("onSnapshot error:", error);
+      });
+    }
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
   }, []);
 
   const loadPatients = async () => {

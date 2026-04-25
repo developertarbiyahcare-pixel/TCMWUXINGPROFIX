@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'username', 'role', 'createdAt']) &&
+             data.uid is string &&
+             data.username is string &&
+             data.role in ['ADMIN', 'REGULAR'] &&
+             data.createdAt is number;
+    }
+
+    function isValidPatient(data) {
+      return data.keys().hasAll(['id', 'authorUid', 'patientName', 'timestamp']) &&
+             data.id is string &&
+             data.authorUid == request.auth.uid &&
+             data.patientName is string &&
+             data.timestamp is number;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username', 'role']));
+    }
+
+    match /patients/{patientId} {
+      allow read: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      allow create: if isSignedIn() && isValidPatient(request.resource.data);
+      allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid && isValidPatient(request.resource.data);
+      allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+    }
+  }
+}

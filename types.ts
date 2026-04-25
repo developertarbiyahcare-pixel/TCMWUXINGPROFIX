@@ -34,6 +34,7 @@ export interface UserAccount {
   password: string;
   role: 'SUPER_SAINT' | 'SUPER_USER' | 'ADMIN' | 'REGULAR';
   createdAt: number;
+  provider?: 'google' | 'local';
 }
 
 export interface ApiKeyEntry {

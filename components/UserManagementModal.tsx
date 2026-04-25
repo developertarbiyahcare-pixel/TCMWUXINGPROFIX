@@ -190,6 +190,11 @@ const UserManagementModal: React.FC<Props> = ({ isOpen, onClose, currentUser }) 
       return;
     }
 
+    if (currentUser.provider === 'google') {
+      setError('Pengguna Google tidak dapat mengubah password di sini. Silakan ubah melalui akun Google Anda.');
+      return;
+    }
+
     setIsChangingPassword(true);
     try {
       const updatedUser = { ...currentUser, password: newOwnPassword };

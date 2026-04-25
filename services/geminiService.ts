@@ -85,11 +85,11 @@ export const sendMessageToGeminiStream = async (
         { role: 'user', parts }
       ];
 
-      const result = await ai.models.generateContent({
-        model: 'gemini-1.5-flash',
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
         contents: contents,
-        systemInstruction: getSystemInstruction(language, cdssAnalysis),
-        generationConfig: {
+        config: {
+          systemInstruction: getSystemInstruction(language, cdssAnalysis),
           responseMimeType: "application/json",
           responseSchema: {
             type: Type.OBJECT,
@@ -182,11 +182,9 @@ export const sendMessageToGeminiStream = async (
           maxOutputTokens: 8192,
         }
       });
-
-      const response = await result.response;
       let rawText: string | undefined = "";
       try {
-        rawText = response.text();
+        rawText = response.text;
       } catch (e) {
         console.error("Error getting response text:", e);
         const candidate = response.candidates?.[0];

@@ -359,12 +359,21 @@ const App: React.FC = () => {
         <header className="p-4 bg-white/50 border-b border-purple-100 flex justify-between items-center backdrop-blur-md z-30">
            <div className="flex items-center gap-4">
              <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 bg-purple-100 rounded-lg text-purple-900"><Menu className="w-5 h-5" /></button>
-             <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600">
-                  Local Mode
-                </span>
-             </div>
+             {currentUser?.provider === 'google' ? (
+               <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 rounded-full border border-purple-200">
+                  <div className="w-2 h-2 rounded-full bg-fuchsia-500 animate-pulse"></div>
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-purple-600">
+                    Sync Mode
+                  </span>
+               </div>
+             ) : (
+               <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600">
+                    Local Mode
+                  </span>
+               </div>
+             )}
            </div>
            
            <div className="flex items-center gap-2 md:gap-4">

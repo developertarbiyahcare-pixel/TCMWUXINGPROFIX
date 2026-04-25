@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { Lock, User, LogIn, Database, Zap, Mail, UserPlus } from 'lucide-react';
-import { login, register } from '../services/authService';
+import { Lock, User, LogIn, Database, Zap, Chrome, Mail, UserPlus } from 'lucide-react';
+import { login, register, loginWithGoogle } from '../services/authService';
 import { UserAccount } from '../types';
 import { DEFAULT_ADMIN } from '../services/db';
 
@@ -87,6 +87,21 @@ const LoginScreen: React.FC<Props> = ({ onLoginBerhasil }) => {
           <p className="text-[#A78BFA] text-[10px] font-bold uppercase tracking-[0.2em] mb-8">Clinical Decision Support System</p>
         </div>
 
+        <button 
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+          className="w-full bg-white border border-[#EDE9FE] text-[#4C1D95] font-black py-4 rounded-2xl shadow-sm hover:bg-[#F9F5FF] hover:border-[#C4B5FD] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mb-6"
+        >
+          <Chrome className="w-5 h-5 text-[#7C3AED]" />
+          {isLoading ? 'Processing...' : 'Login dengan Google'}
+        </button>
+
+        <div className="flex items-center gap-4 mb-6">
+          <div className="h-px bg-[#EDE9FE] flex-1"></div>
+          <span className="text-[10px] font-bold text-[#A78BFA] uppercase tracking-widest">Atau Mode Offline</span>
+          <div className="h-px bg-[#EDE9FE] flex-1"></div>
+        </div>
+
         <div className="bg-[#F9F5FF] p-1.5 rounded-2xl flex mb-8">
           <button 
             onClick={() => setActiveTab('login')}
@@ -147,10 +162,10 @@ const LoginScreen: React.FC<Props> = ({ onLoginBerhasil }) => {
         <div className="pt-8 space-y-6">
            <div className="space-y-3">
              <p className="text-[9px] text-center font-black text-[#A78BFA] uppercase tracking-widest">
-               Mode Offline Aktif: Data pasien disimpan di perangkat ini.
+               Info: Gunakan akun Google untuk sinkronisasi cloud
              </p>
              <p className="text-[9px] text-center font-black text-[#A78BFA] uppercase tracking-widest">
-               Privasi Penuh - Tanpa Sinkronisasi Cloud.
+               atau gunakan mode offline untuk data lokal.
              </p>
            </div>
            

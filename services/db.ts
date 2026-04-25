@@ -1,4 +1,6 @@
 import { UserAccount, SavedPatient, AppSettings } from '../types';
+import { db as firestore, auth } from '../firebase';
+import { collection, doc, setDoc, deleteDoc, getDocs, query, where } from 'firebase/firestore';
 
 export enum OperationType {
   CREATE = 'create',
@@ -9,12 +11,41 @@ export enum OperationType {
   WRITE = 'write',
 }
 
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 export const DEFAULT_ADMIN: UserAccount = {
   uid: 'admin-init',
   username: 'admin',
   password: 'admin123', 
   role: 'SUPER_SAINT',
-  createdAt: Date.now()
+  createdAt: Date.now(),
+  provider: 'local'
 };
 
 export const db = {
@@ -66,9 +97,6 @@ export const db = {
         return false;
       }
     },
-    register: async (user: Omit<UserAccount, 'uid' | 'createdAt' | 'role'>): Promise<boolean> => {
-      return true;
-    },
     delete: async (uid: string): Promise<boolean> => {
       try {
         const users = await db.users.getAll();
@@ -84,21 +112,60 @@ export const db = {
   patients: {
     getAll: async (): Promise<SavedPatient[]> => {
       const localData = localStorage.getItem('tcm_patients_local');
-      return localData ? JSON.parse(localData) : [];
+      let patients: SavedPatient[] = localData ? JSON.parse(localData) : [];
+      
+      // If logged in with Google, also fetch from Firestore
+      if (auth.currentUser) {
+        try {
+          const q = query(collection(firestore, 'patients'), where('authorUid', '==', auth.currentUser.uid));
+          const querySnapshot = await getDocs(q);
+          const cloudPatients = querySnapshot.docs.map(doc => doc.data() as SavedPatient);
+          
+          // Merge (Local takes priority if timestamp is newer, but usually Firestore is the master)
+          const merged = [...patients];
+          cloudPatients.forEach(cp => {
+            const index = merged.findIndex(p => p.id === cp.id);
+            if (index === -1) {
+              merged.push(cp);
+            } else if (cp.timestamp > merged[index].timestamp) {
+              merged[index] = cp;
+            }
+          });
+          patients = merged;
+        } catch (e) {
+          console.error("Cloud fetch failed:", e);
+        }
+      }
+      
+      return patients.sort((a, b) => b.timestamp - a.timestamp);
     },
     add: async (patient: SavedPatient) => {
-      const patientWithAuth = { ...patient, authorUid: 'local-guest' };
+      const authorUid = auth.currentUser?.uid || 'local-guest';
+      const patientWithAuth = { ...patient, authorUid };
+      
       if (!patientWithAuth.id) {
          patientWithAuth.id = Date.now().toString();
       }
+
+      // Save Local
       try {
          const localData = localStorage.getItem('tcm_patients_local');
          const patients: SavedPatient[] = localData ? JSON.parse(localData) : [];
-         const newPatients = [...patients.filter(p => p.id !== patient.id), patientWithAuth];
+         const newPatients = [...patients.filter(p => p.id !== patientWithAuth.id), patientWithAuth];
          localStorage.setItem('tcm_patients_local', JSON.stringify(newPatients));
       } catch (err) {}
+
+      // Save Cloud if logged in
+      if (auth.currentUser) {
+        try {
+          await setDoc(doc(firestore, 'patients', patientWithAuth.id), patientWithAuth);
+        } catch (e) {
+          handleFirestoreError(e, OperationType.WRITE, `patients/${patientWithAuth.id}`);
+        }
+      }
     },
     delete: async (id: string) => {
+      // Delete Local
       try {
          const localData = localStorage.getItem('tcm_patients_local');
          if (localData) {
@@ -106,6 +173,15 @@ export const db = {
             localStorage.setItem('tcm_patients_local', JSON.stringify(patients.filter(p => p.id !== id)));
          }
       } catch (err) {}
+
+      // Delete Cloud if logged in
+      if (auth.currentUser) {
+        try {
+          await deleteDoc(doc(firestore, 'patients', id));
+        } catch (e) {
+          handleFirestoreError(e, OperationType.DELETE, `patients/${id}`);
+        }
+      }
     }
   }
 };
