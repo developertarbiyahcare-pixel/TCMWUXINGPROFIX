@@ -49,16 +49,31 @@ export const loginWithGoogle = async (): Promise<UserAccount | null> => {
     const userRef = doc(firestore, 'users', fbUser.uid);
     const userSnap = await getDoc(userRef);
 
-    let role: 'ADMIN' | 'REGULAR' = 'REGULAR';
+    let role: 'ADMIN' | 'REGULAR' | 'SUPER_SAINT' | 'SUPER_USER' = 'REGULAR';
+    
+    // Bootstrap Admin: If the email matches the developer email, make them SUPER_SAINT
+    const BOOTSTRAP_ADMINS = ['developertarbiyahcare@gmail.com', 'nvardi75@gmail.com'];
     
     if (userSnap.exists()) {
-      role = userSnap.data().role as any || 'REGULAR';
+      const existingData = userSnap.data();
+      role = existingData.role as any || 'REGULAR';
+      
+      // Auto-upgrade developer emails if they are stuck as regular
+      if (fbUser.email && BOOTSTRAP_ADMINS.includes(fbUser.email) && role !== 'SUPER_SAINT') {
+        role = 'SUPER_SAINT';
+        await setDoc(userRef, { role: 'SUPER_SAINT' }, { merge: true });
+      }
     } else {
+      // If first time login and matches bootstrap email, grant high privileges
+      if (fbUser.email && BOOTSTRAP_ADMINS.includes(fbUser.email)) {
+        role = 'SUPER_SAINT';
+      }
+
       // Create new user in Firestore
       await setDoc(userRef, {
         uid: fbUser.uid,
         username: fbUser.email,
-        role: 'REGULAR',
+        role: role,
         createdAt: Date.now(),
         provider: 'google'
       });

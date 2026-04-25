@@ -171,10 +171,10 @@ const LoginScreen: React.FC<Props> = ({ onLoginBerhasil }) => {
         <div className="pt-8 space-y-6">
            <div className="space-y-3">
              <p className="text-[9px] text-center font-black text-[#A78BFA] uppercase tracking-widest">
-               Info: Gunakan akun Google untuk sinkronisasi cloud
+               Info: Login dengan Google (email developer) otomatis akses Super Admin.
              </p>
              <p className="text-[9px] text-center font-black text-[#A78BFA] uppercase tracking-widest">
-               atau gunakan mode offline untuk data lokal.
+               Default Akun Lokal: admin / admin123
              </p>
            </div>
            
@@ -183,7 +183,7 @@ const LoginScreen: React.FC<Props> = ({ onLoginBerhasil }) => {
                onClick={handleQuickAccess}
                className="text-[10px] font-black text-[#7C3AED] uppercase tracking-widest hover:underline"
              >
-               Quick Access (Demo Mode)
+               Quick Access (admin/admin123)
              </button>
            </div>
         </div>

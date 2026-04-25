@@ -123,6 +123,12 @@ const App: React.FC = () => {
           if (userSnap.exists()) {
             role = userSnap.data().role || role;
           }
+          
+          // Failsafe upgrade for developer emails
+          const BOOTSTRAP_EMAILS = ['developertarbiyahcare@gmail.com', 'nvardi75@gmail.com'];
+          if (fbUser.email && BOOTSTRAP_EMAILS.includes(fbUser.email) && role !== 'SUPER_SAINT') {
+            role = 'SUPER_SAINT';
+          }
         } catch (e) {
           console.error("Role sync error:", e);
         }
@@ -426,12 +432,14 @@ const App: React.FC = () => {
            <SidebarTab id="history" label={t.history} icon={History} />
         </nav>
         <div className="p-4 border-t border-purple-100 shrink-0 bg-white space-y-3 mb-16 md:mb-0">
-           <button 
-             onClick={() => setIsUserModalOpen(true)}
-             className="w-full py-3 bg-purple-50 text-purple-700 border border-purple-100 rounded-2xl font-bold text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-all flex items-center justify-center gap-2 shadow-sm"
-           >
-             <Settings className="w-4 h-4" /> {t.settings}
-           </button>
+           {(currentUser?.role === 'SUPER_SAINT' || currentUser?.role === 'SUPER_USER' || currentUser?.role === 'ADMIN' || (currentUser?.username && ['developertarbiyahcare@gmail.com', 'nvardi75@gmail.com'].includes(currentUser.username))) && (
+             <button 
+               onClick={() => setIsUserModalOpen(true)}
+               className="w-full py-3 bg-purple-50 text-purple-700 border border-purple-100 rounded-2xl font-bold text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-all flex items-center justify-center gap-2 shadow-sm"
+             >
+               <Settings className="w-4 h-4" /> {t.settings}
+             </button>
+           )}
            <button onClick={() => setIsFormOpen(true)} className="w-full py-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-purple-200 transition-all active:scale-95 flex items-center justify-center gap-2">
              <UserPlus className="w-4 h-4" /> {t.newPatient}
            </button>
@@ -469,15 +477,17 @@ const App: React.FC = () => {
              )}
            </div>
            
-            {/* Right side settings - ALWAYS VISIBLE */}
+            {/* Right side settings - ONLY FOR ADMINS */}
             <div className="flex items-center gap-2">
-               <button 
-                onClick={() => setIsUserModalOpen(true)}
-                className="p-2.5 bg-purple-50 text-purple-600 rounded-2xl hover:bg-purple-100 transition-all border border-purple-100 active:scale-90 cursor-pointer"
-                title="System Settings"
-               >
-                 <Settings className="w-5 h-5" />
-               </button>
+               {(currentUser?.role === 'SUPER_SAINT' || currentUser?.role === 'SUPER_USER' || currentUser?.role === 'ADMIN' || (currentUser?.username && ['developertarbiyahcare@gmail.com', 'nvardi75@gmail.com'].includes(currentUser.username))) && (
+                 <button 
+                  onClick={() => setIsUserModalOpen(true)}
+                  className="p-2.5 bg-purple-50 text-purple-600 rounded-2xl hover:bg-purple-100 transition-all border border-purple-100 active:scale-90 cursor-pointer"
+                  title="System Settings"
+                 >
+                   <Settings className="w-5 h-5" />
+                 </button>
+               )}
                <button 
                  onClick={toggleLanguage}
                  className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-50 text-purple-700 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-purple-100 hover:bg-purple-100 transition-all active:scale-90 cursor-pointer"
