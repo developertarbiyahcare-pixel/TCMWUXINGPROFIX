@@ -16,9 +16,9 @@ export default defineConfig(({ mode }) => {
           registerType: 'autoUpdate',
           includeAssets: ['icon.svg'],
           manifest: {
-            name: 'TCM WuXing Pro',
-            short_name: 'WuXing Pro',
-            description: 'TCM Clinical Decision Support System',
+            name: 'Tarbiyah TCM Pro',
+            short_name: 'TCM Pro',
+            description: 'Profesional TCM Clinical Decision Support System',
             theme_color: '#7e22ce',
             background_color: '#faf5ff',
             display: 'standalone',
