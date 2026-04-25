@@ -85,8 +85,8 @@ export const sendMessageToGeminiStream = async (
         { role: 'user', parts }
       ];
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+      const result = await ai.models.generateContent({
+        model: 'gemini-1.5-flash',
         contents: contents,
         config: {
           systemInstruction: getSystemInstruction(language, cdssAnalysis),
@@ -179,11 +179,12 @@ export const sendMessageToGeminiStream = async (
             }
           },
           temperature: 0.1,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 8192,
         }
       });
 
-      let rawText = "";
+      const response = result.response;
+      let rawText: string | undefined = "";
       try {
         rawText = response.text();
       } catch (e) {
@@ -196,6 +197,10 @@ export const sendMessageToGeminiStream = async (
           throw new Error("Respon terlalu panjang dan terpotong. Silakan coba pertanyaan yang lebih spesifik.");
         }
         throw new Error("Gagal mengambil respon dari AI.");
+      }
+
+      if (!rawText) {
+        throw new Error("Gagal mengambil respon dari AI (Respon kosong).");
       }
 
       let cleanText = rawText.trim();
