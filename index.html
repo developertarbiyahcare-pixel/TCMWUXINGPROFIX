@@ -1,0 +1,103 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#7e22ce" />
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <title>TCM WuXing Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              tcm: {
+                primary: '#7e22ce', // Purple 700 (Ungu Tua)
+                secondary: '#a855f7', // Purple 500 (Ungu Sedang)
+                accent: '#d8b4fe', // Purple 300 (Ungu Muda)
+                dark: '#3b0764', // Purple 950
+                light: '#faf5ff', // Purple 50 (Putih Kalem)
+              }
+            },
+            animation: {
+              'flow': 'flow 1.5s linear infinite',
+              'spin-slow': 'spin 4s linear infinite',
+              'vibrate': 'vibrate 0.3s linear infinite',
+              'pulse-soft': 'pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            },
+            keyframes: {
+              vibrate: {
+                '0%, 100%': { transform: 'translateX(0)' },
+                '25%': { transform: 'translateX(-1px)' },
+                '75%': { transform: 'translateX(1px)' },
+              },
+              'pulse-soft': {
+                '0%, 100%': { opacity: '1', transform: 'scale(1)' },
+                '50%': { opacity: '0.5', transform: 'scale(0.98)' },
+              },
+              typing: {
+                '0%, 100%': { transform: 'translateY(0px)' },
+                '20%': { transform: 'translateY(-5px)' },
+                '40%': { transform: 'translateY(0px)' },
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      .scrollbar-hide::-webkit-scrollbar { display: none; }
+      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+      @keyframes flow {
+        from { stroke-dashoffset: 20; }
+        to { stroke-dashoffset: 0; }
+      }
+      .animate-flow {
+        stroke-dasharray: 5, 5;
+        animation: flow 1s linear infinite;
+      }
+      
+      .path-overacting {
+        stroke-width: 4px;
+        filter: drop-shadow(0 0 5px rgba(239, 68, 68, 0.8));
+      }
+      
+      .path-insulting {
+        stroke-dasharray: 2, 2;
+      }
+
+      .dot-typing {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background-color: currentColor;
+        margin-right: 3px;
+        animation: typing 1s infinite ease-in-out;
+      }
+      .dot-typing:nth-child(2) { animation-delay: 0.2s; }
+      .dot-typing:nth-child(3) { animation-delay: 0.4s; }
+
+      @keyframes typing {
+        0%, 100% { transform: translateY(0px); }
+        20% { transform: translateY(-5px); }
+        40% { transform: translateY(0px); }
+      }
+
+      @media print {
+        html, body, #root, .h-screen, .h-full { height: auto !important; overflow: visible !important; }
+        body { background-color: white !important; color: black !important; }
+        .print\:hidden { display: none !important; }
+        * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      }
+    </style>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-purple-50 text-purple-950 h-screen overflow-hidden print:h-auto print:overflow-visible">
+    <div id="root" class="h-full print:h-auto"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

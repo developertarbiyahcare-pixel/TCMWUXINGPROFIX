@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user profile in the application. Does not store password.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Authenticated user UID" },
+        "username": { "type": "string" },
+        "role": { "type": "string", "enum": ["SUPER_SAINT", "SUPER_USER", "ADMIN", "REGULAR"] },
+        "createdAt": { "type": "number", "description": "Timestamp of creation" }
+      },
+      "required": ["uid", "username", "role", "createdAt"]
+    },
+    "Patient": {
+      "title": "Patient",
+      "description": "A comprehensive patient record for TCM diagnosis.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "authorUid": { "type": "string" },
+        "patientName": { "type": "string" },
+        "age": { "type": "string" },
+        "sex": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "complaint": { "type": "string" },
+        "symptoms": { "type": "string" },
+        "selectedSymptoms": { "type": "array" },
+        "tongue": { "type": "object" },
+        "pulse": { "type": "object" },
+        "diagnosis": { "type": "object" },
+        "timestamp": { "type": "number" },
+        "medicalHistory": { "type": "string" },
+        "biomedicalDiagnosis": { "type": "string" },
+        "icd10": { "type": "string" },
+        "medications": { "type": "string" },
+        "followUpTanggal": { "type": "string" },
+        "notes": { "type": "string" }
+      },
+      "required": ["id", "authorUid", "patientName"]
+    },
+    "Settings": {
+      "title": "Settings",
+      "description": "Global application configuration.",
+      "type": "object",
+      "properties": {
+        "geminiApiKey": { "type": "string" },
+        "geminiApiKeys": { "type": "array" },
+        "clinicName": { "type": "string" },
+        "clinicAddress": { "type": "string" },
+        "clinicPhone": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile data."
+    },
+    "/patients/{patientId}": {
+      "schema": { "$ref": "#/entities/Patient" },
+      "description": "Patient records owned by users."
+    },
+    "/settings/{settingId}": {
+      "schema": { "$ref": "#/entities/Settings" },
+      "description": "Application-wide settings."
+    }
+  }
+}

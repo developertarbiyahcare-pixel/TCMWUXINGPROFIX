@@ -1,0 +1,132 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAuthenticated() {
+      // Mandate email verified for production-grade security
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Role checks
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['ADMIN', 'SUPER_SAINT'];
+    }
+
+    // --- User Validation ---
+
+    function isValidUser(data) {
+      let required = ['uid', 'username', 'role', 'createdAt'];
+      return data.keys().hasAll(required) && 
+             data.keys().size() >= 4 &&
+             data.uid == request.auth.uid &&
+             data.username is string && data.username.size() >= 2 && data.username.size() <= 100 &&
+             data.role is string && data.role in ['SUPER_SAINT', 'SUPER_USER', 'ADMIN', 'REGULAR'] &&
+             data.createdAt is number;
+    }
+
+    match /users/{userId} {
+      allow get: if isAuthenticated() && (userId == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && isAdmin(); // Only admins can list users
+      
+      allow create: if isAuthenticated() && isValidId(userId) && userId == request.auth.uid && isValidUser(incoming()) && incoming().role == 'REGULAR';
+      allow update: if isAuthenticated() && isValidId(userId) && userId == request.auth.uid && 
+                    isValidUser(incoming()) && 
+                    incoming().role == existing().role && // Prevent self-promoting
+                    incoming().diff(existing()).affectedKeys().hasOnly(['username']);
+      allow delete: if isAuthenticated() && isAdmin();
+    }
+
+    // --- Patient Validation ---
+
+    function isValidPatient(data) {
+      let required = ['id', 'authorUid', 'patientName'];
+      return data.keys().hasAll(required) &&
+             // Ensure it doesn't have shadow fields
+             data.keys().size() <= 25 && 
+             data.id is string && data.id.size() <= 128 &&
+             data.authorUid == request.auth.uid &&
+             data.patientName is string && data.patientName.size() <= 200 &&
+             (!data.keys().hasAny(['age']) || data.age is string && data.age.size() <= 10) &&
+             (!data.keys().hasAny(['sex']) || data.sex is string && data.sex.size() <= 20) &&
+             (!data.keys().hasAny(['phone']) || data.phone is string && data.phone.size() <= 30) &&
+             (!data.keys().hasAny(['email']) || data.email is string && data.email.size() <= 100) &&
+             (!data.keys().hasAny(['address']) || data.address is string && data.address.size() <= 500) &&
+             (!data.keys().hasAny(['complaint']) || data.complaint is string && data.complaint.size() <= 5000) &&
+             (!data.keys().hasAny(['symptoms']) || data.symptoms is string && data.symptoms.size() <= 10000) &&
+             (!data.keys().hasAny(['selectedSymptoms']) || data.selectedSymptoms is list && data.selectedSymptoms.size() <= 200) &&
+             (!data.keys().hasAny(['tongue']) || data.tongue is map) &&
+             (!data.keys().hasAny(['pulse']) || data.pulse is map) &&
+             (!data.keys().hasAny(['diagnosis']) || data.diagnosis is map) &&
+             (!data.keys().hasAny(['timestamp']) || data.timestamp is number) &&
+             (!data.keys().hasAny(['medicalHistory']) || data.medicalHistory is string && data.medicalHistory.size() <= 10000) &&
+             (!data.keys().hasAny(['biomedicalDiagnosis']) || data.biomedicalDiagnosis is string && data.biomedicalDiagnosis.size() <= 5000) &&
+             (!data.keys().hasAny(['icd10']) || data.icd10 is string && data.icd10.size() <= 50) &&
+             (!data.keys().hasAny(['medications']) || data.medications is string && data.medications.size() <= 5000) &&
+             (!data.keys().hasAny(['followUpTanggal']) || data.followUpTanggal is string && data.followUpTanggal.size() <= 100) &&
+             (!data.keys().hasAny(['notes']) || data.notes is string && data.notes.size() <= 10000);
+    }
+
+    match /patients/{patientId} {
+      allow get: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+      allow list: if isAuthenticated() && (resource.data.authorUid == request.auth.uid || isAdmin());
+      
+      allow create: if isAuthenticated() && isValidId(patientId) && isValidPatient(incoming());
+      
+      allow update: if isAuthenticated() && isValidId(patientId) && 
+                    (existing().authorUid == request.auth.uid || isAdmin()) &&
+                    isValidPatient(incoming()) &&
+                    incoming().authorUid == existing().authorUid &&
+                    incoming().id == existing().id &&
+                    // Restrict what can be updated to exclude immutables
+                    incoming().diff(existing()).affectedKeys().hasOnly([
+                      'patientName', 'age', 'sex', 'phone', 'email', 'address', 'complaint', 'symptoms', 
+                      'selectedSymptoms', 'tongue', 'pulse', 'diagnosis', 'timestamp', 'medicalHistory', 
+                      'biomedicalDiagnosis', 'icd10', 'medications', 'followUpTanggal', 'notes'
+                    ]);
+                    
+      allow delete: if isAuthenticated() && (existing().authorUid == request.auth.uid || isAdmin());
+    }
+
+    // --- Settings Validation ---
+
+    function isValidSettings(data) {
+      return data.keys().size() <= 10 &&
+             (!data.keys().hasAny(['geminiApiKey']) || data.geminiApiKey is string && data.geminiApiKey.size() <= 500) &&
+             (!data.keys().hasAny(['geminiApiKeys']) || data.geminiApiKeys is list && data.geminiApiKeys.size() <= 100) &&
+             (!data.keys().hasAny(['clinicName']) || data.clinicName is string && data.clinicName.size() <= 200) &&
+             (!data.keys().hasAny(['clinicAddress']) || data.clinicAddress is string && data.clinicAddress.size() <= 500) &&
+             (!data.keys().hasAny(['clinicPhone']) || data.clinicPhone is string && data.clinicPhone.size() <= 100);
+    }
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      // Only admins can modify settings
+      allow write: if isAuthenticated() && isAdmin() && isValidSettings(incoming());
+    }
+  }
+}
