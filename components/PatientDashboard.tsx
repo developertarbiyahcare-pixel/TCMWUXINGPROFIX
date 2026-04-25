@@ -2,14 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Trash2, Calendar, User, SearchX } from 'lucide-react';
 import { db } from '../services/db';
 import DoctorNoteModal from './DoctorNoteModal';
-import { SavedPatient } from '../types'; // assuming SavedPatient is the type
+import { SavedPatient, Language } from '../types';
 
-const PatientDashboard: React.FC = () => {
+interface Props {
+  language?: Language;
+}
+
+const PatientDashboard: React.FC<Props> = ({ language = Language.INDONESIAN }) => {
   const [patients, setPatients] = useState<SavedPatient[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPatient, setPilihedPatient] = useState<SavedPatient | null>(null);
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [isMemuat, setIsMemuat] = useState(true);
+
+  const t = {
+    title: language === Language.ENGLISH ? "Patient Dashboard" : "Dashboard Pasien",
+    subtitle: language === Language.ENGLISH ? "Manage patient data securely." : "Kelola semua data pasien dengan aman dan tersinkronisasi.",
+    total: language === Language.ENGLISH ? "Total Patients" : "Total Pasien",
+    diagnoses: language === Language.ENGLISH ? "Diagnoses" : "Diagnosa Terdaftar",
+    recent: language === Language.ENGLISH ? "Recent Patient" : "Pasien Terbaru",
+    searchPlaceholder: language === Language.ENGLISH ? "Search name or diagnosis..." : "Cari nama pasien atau diagnosis...",
+    filter: language === Language.ENGLISH ? "Filter Data" : "Filter Data",
+    tableHeader: {
+      name: language === Language.ENGLISH ? "Patient Name" : "Nama Pasien",
+      age: language === Language.ENGLISH ? "Age/Sex" : "Usia/JK",
+      visit: language === Language.ENGLISH ? "Last Visit" : "Kunjungan Terakhir",
+      diagnosis: language === Language.ENGLISH ? "Main Diagnosis" : "Diagnosis Utama"
+    },
+    confirmDelete: language === Language.ENGLISH ? "Delete this patient data?" : "Yakin hapus data pasien ini?"
+  };
 
   useEffect(() => {
     loadPatients();
@@ -19,7 +40,6 @@ const PatientDashboard: React.FC = () => {
     setIsMemuat(true);
     try {
       const allPatients = await db.patients.getAll();
-      // Sort patients by date, most recent first
       setPatients(allPatients.sort((a,b) => b.timestamp - a.timestamp));
     } catch (e) {
       console.error(e);
@@ -34,7 +54,7 @@ const PatientDashboard: React.FC = () => {
   );
 
   const handleDelete = async (id: string) => {
-    if (window.confirm('Yakin hapus data pasien ini?')) {
+    if (window.confirm(t.confirmDelete)) {
       await db.patients.delete(id);
       setPatients(patients.filter(p => p.id !== id));
     }
@@ -44,58 +64,54 @@ const PatientDashboard: React.FC = () => {
     <div className="p-4 md:p-8 animate-fade-in">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-purple-950">Dashboard Pasien</h1>
-          <p className="text-purple-600 font-medium">Kelola semua data pasien dengan aman dan tersinkronisasi.</p>
+          <h1 className="text-3xl font-black text-purple-950">{t.title}</h1>
+          <p className="text-purple-600 font-medium">{t.subtitle}</p>
         </div>
-        {/* Placeholder if we wanted to open new patient manually here. But typically it's handled via the chat/diagnosis flow */}
       </div>
 
-      {/* Statistik */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-gradient-to-br from-white to-purple-50 border border-purple-100 rounded-3xl p-6 shadow-sm">
-          <div className="text-purple-500 font-bold tracking-widest text-xs uppercase">Total Pasien</div>
+          <div className="text-purple-500 font-bold tracking-widest text-xs uppercase">{t.total}</div>
           <div className="text-4xl font-black text-purple-900 mt-2">{patients.length}</div>
         </div>
         <div className="bg-gradient-to-br from-white to-amber-50 border border-amber-100 rounded-3xl p-6 shadow-sm">
-          <div className="text-amber-500 font-bold tracking-widest text-xs uppercase">Diagnosa Terdaftar</div>
+          <div className="text-amber-500 font-bold tracking-widest text-xs uppercase">{t.diagnoses}</div>
           <div className="text-4xl font-black text-amber-600 mt-2">{patients.filter(p => p.diagnosis?.patternId).length}</div>
         </div>
         <div className="bg-gradient-to-br from-white to-emerald-50 border border-emerald-100 rounded-3xl p-6 shadow-sm">
-          <div className="text-emerald-500 font-bold tracking-widest text-xs uppercase">Pasien Terbaru</div>
+          <div className="text-emerald-500 font-bold tracking-widest text-xs uppercase">{t.recent}</div>
           <div className="text-lg font-black text-emerald-600 mt-3 truncate pl-1">
             {patients.length > 0 ? patients[0].name : '-'}
           </div>
         </div>
       </div>
 
-      {/* Search & Filter */}
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1 group">
           <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-300 group-focus-within:text-purple-500 transition-colors" />
           <input
             type="text"
-            placeholder="Cari nama pasien atau diagnosis..."
+            placeholder={t.searchPlaceholder}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-14 pr-6 py-4 bg-white border-2 border-purple-100 rounded-[2rem] focus:outline-none focus:border-purple-400 focus:bg-purple-50/30 transition-all font-medium text-purple-900"
+            className="w-full pl-14 pr-6 py-4 bg-white border-2 border-purple-100 rounded-[2rem] focus:outline-none focus:border-purple-400 focus:bg-purple-50/30 transition-all font-medium text-purple-950"
           />
         </div>
         <button className="px-8 py-4 bg-white border-2 border-purple-100 rounded-[2rem] font-bold text-purple-700 flex items-center justify-center gap-2 hover:border-purple-300 hover:bg-purple-50 transition-all shadow-sm shrink-0">
           <Calendar className="w-5 h-5" />
-          Filter Data
+          {t.filter}
         </button>
       </div>
 
-      {/* Tabel Pasien */}
       <div className="bg-white border border-purple-100 rounded-[2rem] overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[800px]">
             <thead className="bg-purple-50/50">
               <tr>
-                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">Nama Pasien</th>
-                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">Usia/JK</th>
-                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">Kunjungan Terakhir</th>
-                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">Diagnosis Utama</th>
+                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">{t.tableHeader.name}</th>
+                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">{t.tableHeader.age}</th>
+                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">{t.tableHeader.visit}</th>
+                <th className="text-left py-5 px-6 font-black text-xs uppercase tracking-widest text-purple-800">{t.tableHeader.diagnosis}</th>
                 <th className="w-24 py-5 px-6"></th>
               </tr>
             </thead>

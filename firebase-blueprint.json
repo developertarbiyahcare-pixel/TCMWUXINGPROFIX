@@ -26,6 +26,27 @@
         "timestamp": { "type": "number" }
       },
       "required": ["id", "authorUid", "patientName", "timestamp"]
+    },
+    "AppSettings": {
+      "title": "AppSettings",
+      "description": "Global application settings including API keys",
+      "type": "object",
+      "properties": {
+        "geminiApiKey": { "type": "string" },
+        "geminiApiKeys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string" },
+              "isExhausted": { "type": "boolean" }
+            }
+          }
+        },
+        "clinicName": { "type": "string" },
+        "clinicAddress": { "type": "string" },
+        "clinicPhone": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -36,6 +57,10 @@
     "/patients/{patientId}": {
       "schema": "Patient",
       "description": "Patient records"
+    },
+    "/settings/config": {
+      "schema": "AppSettings",
+      "description": "Global application configuration"
     }
   }
 }

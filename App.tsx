@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect, Component, ErrorInfo, ReactNode } from 'react';
-import { Send, Activity, MessageSquare, Stethoscope, Archive, Compass, GraduationCap, Shield, ClipboardList, Loader2, Menu, X, Globe, User, LayoutGrid, Scale, Paperclip, Image as ImageIcon, Zap, ChevronDown, ChevronRight, AlertCircle, History, UserPlus, LogOut, Settings } from 'lucide-react';
-import { Language, ChatMessage, ScoredSyndrome, UserAccount, TcmDiagnosisResult, AppSettings } from './types';
+import { Send, Activity, MessageSquare, Stethoscope, Archive, Compass, GraduationCap, Shield, ClipboardList, Loader2, Menu, X, LayoutGrid, Scale, Paperclip, Image as ImageIcon, Zap, ChevronDown, ChevronRight, AlertCircle, History, UserPlus, LogOut, Settings, User, Globe } from 'lucide-react';
+import { Language, ChatMessage, UserAccount, TcmDiagnosisResult, AppSettings } from './types';
 import { sendMessageToGeminiStream } from './services/geminiService';
 import { analyzePatient } from './services/tcmLogic';
 import { db, DEFAULT_ADMIN } from './services/db';
@@ -198,7 +198,7 @@ const App: React.FC = () => {
   }, []);
 
 
-  const [activePanel, setActivePanel] = useState<'chat' | 'diagnosis' | 'wuxing' | 'wuxing-education' | 'ukom' | 'patients' | 'atlas' | 'invoice' | 'bmi' | 'acupuncture'>('chat');
+  const [activePanel, setActivePanel] = useState<'chat' | 'diagnosis' | 'wuxing' | 'wuxing-education' | 'ukom' | 'patients' | 'atlas' | 'invoice' | 'bmi' | 'acupuncture' | 'history'>('chat');
   const [appLanguage, setAppLanguage] = useState<Language>(Language.INDONESIAN);
   
   const [showConsent, setShowConsent] = useState(true);
@@ -232,6 +232,25 @@ const App: React.FC = () => {
   useEffect(() => {
     if (messagesEndRef.current) messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isMemuat]);
+
+  const t = {
+    chat: appLanguage === Language.ENGLISH ? "Chat Sindrom" : "Chat Sindrom",
+    patients: appLanguage === Language.ENGLISH ? "Patient List" : "Daftar Pasien",
+    diagnosis: appLanguage === Language.ENGLISH ? "Auto Analysis" : "Analisis Otomatis",
+    acupuncture: appLanguage === Language.ENGLISH ? "Acupuncture Points" : "Titik Akupunktur",
+    atlas: appLanguage === Language.ENGLISH ? "Syndrome Atlas" : "Atlas Penyakit",
+    wuxing: appLanguage === Language.ENGLISH ? "Wu Xing Expert" : "Pakar Wu Xing",
+    bmi: appLanguage === Language.ENGLISH ? "BMI & Nutrition" : "BMI & Gizi",
+    invoice: appLanguage === Language.ENGLISH ? "Invoice/Receipt" : "Invoice/Kuitansi",
+    history: appLanguage === Language.ENGLISH ? "History" : "Riwayat",
+    settings: appLanguage === Language.ENGLISH ? "System Settings" : "System Pengaturan",
+    newPatient: appLanguage === Language.ENGLISH ? "New Patient Intake" : "Input Pasien Baru",
+    logout: appLanguage === Language.ENGLISH ? "Logout" : "Keluar Akun",
+    analyzing: appLanguage === Language.ENGLISH ? "AI IS ANALYZING..." : "PAKAR SEDANG MENGANALISIS...",
+    placeholder: appLanguage === Language.ENGLISH ? "Enter patient complaints or TCM questions..." : "Masukkan keluhan pasien atau pertanyaan TCM...",
+    terhubung: appLanguage === Language.ENGLISH ? "Connected" : "Terhubung",
+    offline: appLanguage === Language.ENGLISH ? "Offline" : "Luring"
+  };
 
   const handleSendMessage = async (textOverride?: string, analysis?: ScoredSyndrome[], patientData?: any) => {
     const textToSend = textOverride || inputText;
@@ -396,24 +415,25 @@ const App: React.FC = () => {
            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 bg-purple-50 rounded-lg text-purple-400 hover:text-purple-950"><X className="w-5 h-5" /></button>
         </div>
         <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide bg-gradient-to-b from-white to-purple-50/30">
-           <SidebarTab id="chat" label="Konsultasi AI" icon={MessageSquare} />
-           <SidebarTab id="patients" label="Daftar Pasien" icon={User} />
-           <SidebarTab id="diagnosis" label="Analisis Otomatis" icon={Stethoscope} />
-           <SidebarTab id="atlas" label="Atlas Penyakit" icon={LayoutGrid} />
-           <SidebarTab id="wuxing" label="Pakar Wu Xing" icon={Compass} />
-           <SidebarTab id="history" label="Riwayat" icon={History} />
+           <SidebarTab id="chat" label={t.chat} icon={MessageSquare} />
+           <SidebarTab id="patients" label={t.patients} icon={User} />
+           <SidebarTab id="diagnosis" label={t.diagnosis} icon={Stethoscope} />
+           <SidebarTab id="acupuncture" label={t.acupuncture} icon={Zap} />
+           <SidebarTab id="atlas" label={t.atlas} icon={LayoutGrid} />
+           <SidebarTab id="wuxing" label={t.wuxing} icon={Compass} />
+           <SidebarTab id="bmi" label={t.bmi} icon={Scale} />
+           <SidebarTab id="invoice" label={t.invoice} icon={ClipboardList} />
+           <SidebarTab id="history" label={t.history} icon={History} />
         </nav>
         <div className="p-4 border-t border-purple-100 shrink-0 bg-white space-y-3 mb-16 md:mb-0">
-           {(currentUser.role === 'SUPER_SAINT' || currentUser.role === 'SUPER_USER' || currentUser.role === 'ADMIN') && (
-             <button 
-               onClick={() => setIsUserModalOpen(true)}
-               className="w-full py-3 bg-purple-50 text-purple-700 border border-purple-100 rounded-2xl font-bold text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-all flex items-center justify-center gap-2 shadow-sm"
-             >
-               <Settings className="w-4 h-4" /> System Pengaturan
-             </button>
-           )}
+           <button 
+             onClick={() => setIsUserModalOpen(true)}
+             className="w-full py-3 bg-purple-50 text-purple-700 border border-purple-100 rounded-2xl font-bold text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-all flex items-center justify-center gap-2 shadow-sm"
+           >
+             <Settings className="w-4 h-4" /> {t.settings}
+           </button>
            <button onClick={() => setIsFormOpen(true)} className="w-full py-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-purple-200 transition-all active:scale-95 flex items-center justify-center gap-2">
-             <UserPlus className="w-4 h-4" /> Input Pasien Baru
+             <UserPlus className="w-4 h-4" /> {t.newPatient}
            </button>
            <button 
              onClick={async () => {
@@ -424,7 +444,7 @@ const App: React.FC = () => {
              }} 
              className="w-full py-2.5 text-gray-400 hover:text-rose-500 transition-colors font-medium text-[10px] flex items-center justify-center gap-1.5"
            >
-             <LogOut className="w-3.5 h-3.5" /> Keluar Akun
+             <LogOut className="w-3.5 h-3.5" /> {t.logout}
            </button>
         </div>
       </div>
@@ -439,18 +459,33 @@ const App: React.FC = () => {
              {currentUser?.provider === 'google' ? (
                <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Terhubung</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">{t.terhubung}</span>
                </div>
              ) : (
                <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-100">
                   <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Offline</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">{t.offline}</span>
                </div>
              )}
            </div>
            
-           {/* Right side removed as requested */}
-        </header>
+            {/* Right side settings - ALWAYS VISIBLE */}
+            <div className="flex items-center gap-2">
+               <button 
+                onClick={() => setIsUserModalOpen(true)}
+                className="p-2.5 bg-purple-50 text-purple-600 rounded-2xl hover:bg-purple-100 transition-all border border-purple-100 active:scale-90 cursor-pointer"
+                title="System Settings"
+               >
+                 <Settings className="w-5 h-5" />
+               </button>
+               <button 
+                 onClick={toggleLanguage}
+                 className="flex items-center gap-2 px-3 md:px-4 py-2 bg-purple-50 text-purple-700 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-purple-100 hover:bg-purple-100 transition-all active:scale-90 cursor-pointer"
+               >
+                 <Globe className="w-4 h-4" /> <span>{appLanguage === Language.INDONESIAN ? 'ID' : 'EN'}</span>
+               </button>
+            </div>
+         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.05),transparent)] pb-24 md:pb-8">
           {activePanel === 'chat' && (
@@ -491,7 +526,7 @@ const App: React.FC = () => {
                   <div className="bg-white border border-purple-100 p-4 rounded-3xl rounded-tl-none flex items-center gap-3">
                     <Loader2 className="w-4 h-4 text-tcm-primary animate-spin" />
                     <span className="text-xs font-bold text-purple-500 uppercase tracking-widest">
-                      {appLanguage === Language.ENGLISH ? "PAKAR SEDANG MENGANALISIS..." : "PAKAR SEDANG MENGANALISIS..."}
+                      {t.analyzing}
                     </span>
                   </div>
                 </div>
@@ -499,7 +534,7 @@ const App: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
           )}
-          {activePanel === 'patients' && <PatientDashboard />}
+          {activePanel === 'patients' && <PatientDashboard language={appLanguage} />}
           {activePanel === 'diagnosis' && (
             <ScoringAndPointsHub 
               analysis={cdssResults} 
@@ -517,6 +552,11 @@ const App: React.FC = () => {
             </div>
           )}
           {activePanel === 'history' && <PatientArchivePanel />}
+          {activePanel === 'invoice' && <InvoiceGeneratorPanel />}
+          {activePanel === 'bmi' && <BMIKomplitPanel />}
+          {activePanel === 'acupuncture' && <AcupuncturePointsPanel />}
+          {activePanel === 'ukom' && <UkomPracticePanel />}
+          {activePanel === 'wuxing-education' && <WuXingEducationPage />}
         </main>
 
         {activePanel === 'chat' && (
@@ -562,7 +602,7 @@ const App: React.FC = () => {
                   value={inputText} 
                   onChange={e => setInputText(e.target.value)} 
                   onKeyDown={e => e.key === 'Enter' && handleSendMessage()} 
-                  placeholder={appLanguage === Language.ENGLISH ? "Masukkan keluhan pasien atau pertanyaan TCM..." : "Masukkan keluhan pasien atau pertanyaan TCM..."} 
+                  placeholder={t.placeholder} 
                   className="flex-1 bg-purple-50/50 border border-purple-200 rounded-2xl px-6 py-4 outline-none focus:border-tcm-primary focus:bg-white transition-all text-sm text-purple-950 shadow-inner" 
                 />
                 <button 

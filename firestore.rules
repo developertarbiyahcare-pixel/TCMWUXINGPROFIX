@@ -18,8 +18,13 @@ service cloud.firestore {
       return data.keys().hasAll(['uid', 'username', 'role', 'createdAt']) &&
              data.uid is string &&
              data.username is string &&
-             data.role in ['ADMIN', 'REGULAR'] &&
+             data.role in ['SUPER_SAINT', 'SUPER_USER', 'ADMIN', 'REGULAR'] &&
              data.createdAt is number;
+    }
+
+    function isAdmin() {
+       return isSignedIn() && 
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_SAINT', 'SUPER_USER', 'ADMIN'];
     }
 
     function isValidPatient(data) {
@@ -42,6 +47,11 @@ service cloud.firestore {
       allow create: if isSignedIn() && isValidPatient(request.resource.data);
       allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid && isValidPatient(request.resource.data);
       allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+    }
+
+    match /settings/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
     }
   }
 }

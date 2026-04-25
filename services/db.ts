@@ -61,6 +61,19 @@ export const DEFAULT_ADMIN: UserAccount = {
 export const db = {
   settings: {
     get: async (): Promise<AppSettings | null> => {
+      // 1. Try Firestore first if logged in
+      if (auth.currentUser) {
+        try {
+          const snap = await getDoc(doc(firestore, 'settings', 'config'));
+          if (snap.exists()) {
+            return snap.data() as AppSettings;
+          }
+        } catch (e) {
+          console.warn("Error fetching settings from Firestore, falling back to local:", e);
+        }
+      }
+      
+      // 2. Fallback to LocalStorage
       const local = localStorage.getItem('tcm_app_settings');
       const data = local ? JSON.parse(local) : null;
       if (data && !data.geminiApiKeys) {
@@ -70,8 +83,24 @@ export const db = {
     },
     update: async (settings: AppSettings): Promise<{ success: boolean; error?: string }> => {
       try {
+        // 1. Save to LocalStorage always
         const settingsString = JSON.stringify(settings);
         localStorage.setItem('tcm_app_settings', settingsString);
+
+        // 2. Try to sync to Firestore if logged in
+        if (auth.currentUser) {
+          try {
+            await setDoc(doc(firestore, 'settings', 'config'), settings);
+          } catch (fireError: any) {
+            console.error("Cloud sync failed for settings:", fireError);
+            // If it's a permission error, it's expected if they aren't an admin
+            if (fireError.message?.includes("insufficient permissions")) {
+               return { success: true, error: "Saved locally, but Cloud sync failed (Insufficient Permissions). Only Admins can sync settings to Cloud." };
+            }
+            throw fireError;
+          }
+        }
+        
         return { success: true };
       } catch (e: any) {
         console.error('Error in settings.update', e);
