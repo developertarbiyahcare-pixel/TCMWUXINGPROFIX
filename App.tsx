@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect, Component, ErrorInfo, ReactNode } from 'react';
-import { Send, Activity, MessageSquare, Stethoscope, Archive, Compass, GraduationCap, Shield, ClipboardList, Loader2, Menu, X, Globe, User, LayoutGrid, Scale, Paperclip, Image as ImageIcon, Zap, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
+import { Send, Activity, MessageSquare, Stethoscope, Archive, Compass, GraduationCap, Shield, ClipboardList, Loader2, Menu, X, Globe, User, LayoutGrid, Scale, Paperclip, Image as ImageIcon, Zap, ChevronDown, ChevronRight, AlertCircle, History, UserPlus, LogOut, Settings } from 'lucide-react';
 import { Language, ChatMessage, ScoredSyndrome, UserAccount, TcmDiagnosisResult, AppSettings } from './types';
 import { sendMessageToGeminiStream } from './services/geminiService';
 import { analyzePatient } from './services/tcmLogic';
@@ -99,7 +99,12 @@ const App: React.FC = () => {
       const currentUid = fbUser?.uid || null;
       if (lastUidRef.current !== currentUid) {
         setMessages([
-          { id: 'welcome', role: 'model', text: 'Sistem Siap. Masukkan keluhan pasien untuk analisis cepat atau gunakan Form Input Pasien.', timestamp: new Date() }
+          { 
+            id: 'welcome', 
+            role: 'model', 
+            text: `Selamat datang di TCM PRO Indonesia! 👋\n\nSaya asisten AI pakar Akupunktur & Herbal Anda. \n\n💡 **Cara Mulai:**\n1. Ketik keluhan pasien (contoh: "ada pasien stroke, lidah kaku, nadi tegang")\n2. Atau klik **"Input Pasien Baru"** di menu samping untuk data lengkap.\n\n${fbUser ? '✅ Akun Terhubung: Data Anda tersimpan aman di Cloud.' : '⚠️ Mode Lokal: Data hanya di HP ini. Silakan Login untuk sinkronisasi.'}`, 
+            timestamp: new Date() 
+          }
         ]);
         lastUidRef.current = currentUid;
       }
@@ -390,28 +395,25 @@ const App: React.FC = () => {
            <h1 className="text-2xl font-black text-tcm-primary flex items-center gap-2 tracking-tighter"><Activity className="w-8 h-8" /> TCM PRO</h1>
            <button onClick={() => setIsSidebarOpen(false)} className="md:hidden p-2 bg-purple-50 rounded-lg text-purple-400 hover:text-purple-950"><X className="w-5 h-5" /></button>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
-           <SidebarTab id="chat" label={appLanguage === Language.ENGLISH ? "Chat Diagnosa" : "Chat Diagnosa"} icon={MessageSquare} />
-           <SidebarTab id="diagnosis" label="CDSS Auto-Rx" icon={Stethoscope} />
-           <SidebarTab id="atlas" label="Atlas Sindrom" icon={LayoutGrid} />
-           <SidebarTab id="wuxing" label="Wu Xing Master" icon={Compass} />
-           <SidebarTab id="wuxing-education" label="Wu Xing Masterclass" icon={Zap} />
-           <SidebarTab id="acupuncture" label="Acupuncture Atlas" icon={Zap} />
-           <SidebarTab id="patients" label={appLanguage === Language.ENGLISH ? "Dashboard Pasien" : "Dashboard Pasien"} icon={User} />
-           <SidebarTab id="invoice" label="Invoice Generator" icon={ClipboardList} />
-           <SidebarTab id="bmi" label="BMI Komplit" icon={Scale} />
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide bg-gradient-to-b from-white to-purple-50/30">
+           <SidebarTab id="chat" label="Konsultasi AI" icon={MessageSquare} />
+           <SidebarTab id="patients" label="Daftar Pasien" icon={User} />
+           <SidebarTab id="diagnosis" label="Analisis Otomatis" icon={Stethoscope} />
+           <SidebarTab id="atlas" label="Atlas Penyakit" icon={LayoutGrid} />
+           <SidebarTab id="wuxing" label="Pakar Wu Xing" icon={Compass} />
+           <SidebarTab id="history" label="Riwayat" icon={History} />
         </nav>
         <div className="p-4 border-t border-purple-100 shrink-0 bg-white space-y-3 mb-16 md:mb-0">
            {(currentUser.role === 'SUPER_SAINT' || currentUser.role === 'SUPER_USER' || currentUser.role === 'ADMIN') && (
              <button 
                onClick={() => setIsUserModalOpen(true)}
-               className="w-full py-3 bg-white text-purple-600 border border-purple-200 rounded-xl font-bold text-[11px] uppercase tracking-wider hover:bg-purple-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+               className="w-full py-3 bg-purple-50 text-purple-700 border border-purple-100 rounded-2xl font-bold text-[10px] uppercase tracking-wider hover:bg-purple-100 transition-all flex items-center justify-center gap-2 shadow-sm"
              >
-               <Shield className="w-4 h-4" /> Kendali Utama
+               <Settings className="w-4 h-4" /> System Pengaturan
              </button>
            )}
-           <button onClick={() => setIsFormOpen(true)} className="w-full py-3.5 bg-purple-600 text-white rounded-xl font-bold text-xs uppercase tracking-wider hover:bg-purple-700 transition-all shadow-md shadow-purple-100 active:scale-95 flex items-center justify-center gap-2">
-             <ClipboardList className="w-4 h-4" /> {appLanguage === Language.ENGLISH ? "Pendaftaran Pasien Baru" : "Input Pasien Baru"}
+           <button onClick={() => setIsFormOpen(true)} className="w-full py-4 bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest hover:shadow-lg hover:shadow-purple-200 transition-all active:scale-95 flex items-center justify-center gap-2">
+             <UserPlus className="w-4 h-4" /> Input Pasien Baru
            </button>
            <button 
              onClick={async () => {
@@ -420,27 +422,29 @@ const App: React.FC = () => {
                setCurrentUser(null);
                localStorage.removeItem('tcm_active_session');
              }} 
-             className="w-full py-3 bg-rose-50 text-rose-600 border border-rose-100 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
+             className="w-full py-2.5 text-gray-400 hover:text-rose-500 transition-colors font-medium text-[10px] flex items-center justify-center gap-1.5"
            >
-             Keluar / Logout
+             <LogOut className="w-3.5 h-3.5" /> Keluar Akun
            </button>
         </div>
       </div>
 
       <div className="flex-1 flex flex-col h-full bg-purple-50 overflow-hidden relative">
         {/* Top Header with Language Toggle */}
-        <header className="p-3 md:p-4 bg-white/70 border-b border-purple-100 flex justify-between items-center backdrop-blur-xl z-30 sticky top-0">
-           <div className="flex items-center gap-3">
-             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 bg-purple-100 rounded-xl text-purple-900 active:scale-90 transition-transform"><Menu className="w-5 h-5" /></button>
+        <header className="p-4 md:p-6 bg-white/80 border-b border-purple-50 flex justify-between items-center backdrop-blur-xl z-30 sticky top-0">
+           <div className="flex items-center gap-4">
+             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2.5 bg-purple-600 rounded-2xl text-white shadow-lg shadow-purple-100 active:scale-90 transition-all">
+                <Menu className="w-6 h-6" />
+             </button>
              {currentUser?.provider === 'google' ? (
-               <div className="flex items-center gap-2 px-2.5 py-1 bg-purple-100/50 rounded-full border border-purple-200/50">
-                  <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 animate-pulse"></div>
-                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-purple-600">Sync</span>
+               <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Terhubung</span>
                </div>
              ) : (
-               <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-50 rounded-full border border-emerald-100">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600">Local</span>
+               <div className="flex items-center gap-2 px-3 py-1 bg-amber-50 rounded-full border border-amber-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-amber-500"></div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700">Offline</span>
                </div>
              )}
            </div>
@@ -495,6 +499,7 @@ const App: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
           )}
+          {activePanel === 'patients' && <PatientDashboard />}
           {activePanel === 'diagnosis' && (
             <ScoringAndPointsHub 
               analysis={cdssResults} 
@@ -509,43 +514,9 @@ const App: React.FC = () => {
           {activePanel === 'wuxing' && (
             <div className="space-y-8 max-w-6xl mx-auto">
               <WuXingMasterPanel />
-              
-              <div className="flex justify-center pt-4">
-                <button 
-                  onClick={() => {
-                    setActivePanel('acupuncture');
-                    setShowAcupunctureRef(true);
-                  }}
-                  className="w-full max-w-2xl py-6 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-[2rem] font-black text-sm uppercase tracking-[0.2em] shadow-xl shadow-purple-900/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 group overflow-hidden relative"
-                >
-                  <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 skew-x-12"></div>
-                  <Zap className={`w-6 h-6 ${showAcupunctureRef ? 'animate-pulse text-amber-300' : ''}`} />
-                  Eksplorasi Atlas Titik (Tung & TCM)
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
             </div>
           )}
-          {activePanel === 'wuxing-education' && <WuXingEducationPage />}
-          {activePanel === 'acupuncture' && (
-            <div className="max-w-6xl mx-auto animate-fade-in">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-black text-purple-900 uppercase tracking-tighter flex items-center gap-3">
-                  <div className="p-3 bg-teal-100 rounded-2xl">
-                    <Activity className="w-6 h-6 text-teal-600" />
-                  </div>
-                  Referensi Akupunktur Klinis
-                </h2>
-                <div className="px-4 py-2 bg-purple-100 rounded-full text-[10px] font-black text-purple-600 uppercase tracking-widest border border-purple-200">
-                  Titik Klinis Master Tung & TCM
-                </div>
-              </div>
-              <AcupuncturePointsPanel />
-            </div>
-          )}
-          {activePanel === 'patients' && <PatientDashboard />}
-          {activePanel === 'invoice' && <InvoiceGeneratorPanel settings={settings} />}
-          {activePanel === 'bmi' && <BMIKomplitPanel />}
+          {activePanel === 'history' && <PatientArchivePanel />}
         </main>
 
         {activePanel === 'chat' && (

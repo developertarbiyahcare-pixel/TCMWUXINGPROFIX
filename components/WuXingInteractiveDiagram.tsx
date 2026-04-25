@@ -117,7 +117,7 @@ export const WuXingInteractiveDiagram: React.FC<Props> = ({
           style={{ transition: 'all 0.5s ease' }}
         />
         <defs>
-          <marker id={`arrow-${startId}-${endId}-${baseTipe}`} markerWidth="4" markerTinggi Badan="4" refX="3" refY="2" orient="auto">
+          <marker id={`arrow-${startId}-${endId}-${baseTipe}`} markerWidth="4" markerHeight="4" refX="3" refY="2" orient="auto">
             <path d="M0,0 L0,4 L4,2 z" fill={strokeColor} opacity={opacity} />
           </marker>
         </defs>
@@ -168,7 +168,7 @@ export const WuXingInteractiveDiagram: React.FC<Props> = ({
                   textAnchor="middle" 
                   fontSize="3.5" 
                   fill={selectedElemen === id ? 'white' : node.color} 
-                  fontBerat Badan="900" 
+                  fontWeight="900" 
                   className="pointer-events-none uppercase tracking-tighter"
                 >
                   {node.label}
