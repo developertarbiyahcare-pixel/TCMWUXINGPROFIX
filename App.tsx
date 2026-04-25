@@ -138,11 +138,6 @@ const App: React.FC = () => {
     loadPengaturan();
   }, []);
 
-  useEffect(() => {
-    // Auth is ready immediately in local mode
-    setIsAuthReady(true);
-  }, []);
-
 
   const [activePanel, setActivePanel] = useState<'chat' | 'diagnosis' | 'wuxing' | 'wuxing-education' | 'ukom' | 'patients' | 'atlas' | 'invoice' | 'bmi' | 'acupuncture'>('chat');
   const [appLanguage, setAppLanguage] = useState<Language>(Language.INDONESIAN);

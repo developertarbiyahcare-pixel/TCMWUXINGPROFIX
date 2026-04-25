@@ -28,8 +28,12 @@ const LoginScreen: React.FC<Props> = ({ onLoginBerhasil }) => {
     try {
       if (activeTab === 'login') {
         const user = await login(email, password);
-        if (user) onLoginBerhasil(user);
-        else setError('Email atau password salah.');
+        if (user) {
+          onLoginBerhasil(user);
+          localStorage.setItem('tcm_active_session', JSON.stringify(user));
+        } else {
+          setError('Email atau password salah.');
+        }
       } else {
         if (!email.trim() || !password.trim() || !fullName.trim()) {
           setError('Semua field Required diisi.');
@@ -56,12 +60,17 @@ const LoginScreen: React.FC<Props> = ({ onLoginBerhasil }) => {
       const user = await loginWithGoogle();
       if (user) {
         onLoginBerhasil(user);
+        localStorage.setItem('tcm_active_session', JSON.stringify(user));
       } else {
         setError('Gagal login dengan Google.');
       }
     } catch (err: any) {
-      if (err.message && (err.message.includes('auth/network-request-failed') || err.message.includes('auth/popup-blocked'))) {
-        setError('Popup terblokir atau jaringan bermasalah di dalam pratinjau. Mohon klik ikon "Open out" / Buka di tab baru di sudut kanan atas untuk login Google.');
+      console.error("Auth Error Details:", err);
+      if (err.code === 'auth/unauthorized-domain' || (err.message && err.message.includes('unauthorized-domain'))) {
+        const currentDomain = window.location.hostname;
+        setError(`Domain Tidak Diizinkan: "${currentDomain}" belum terdaftar di Firebase Console. \n\nLangkah Perbaikan:\n1. Buka Firebase Console > Authentication > Settings\n2. Tambahkan "${currentDomain}" ke daftar "Authorized Domains"`);
+      } else if (err.message && (err.message.includes('auth/network-request-failed') || err.message.includes('auth/popup-blocked'))) {
+        setError('Popup terblokir atau jaringan bermasalah. Mohon klik ikon "Buka di tab baru" di sudut kanan atas untuk login Google.');
       } else if (err.message && err.message.includes('auth/popup-closed-by-user')) {
         setError('Login dibatalkan oleh pengguna.');
       } else {
