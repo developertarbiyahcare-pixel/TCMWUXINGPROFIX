@@ -34,8 +34,13 @@ export const sendMessageToGeminiStream = async (
   const availableKeys = (apiKeys || []).filter(k => !k.isExhausted && k.key.trim() !== "");
   
   if (availableKeys.length === 0) {
-    const envKey = process.env.GEMINI_API_KEY;
-    if (envKey) {
+    // Try multiple sources for the environment key
+    const envKey = 
+      (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined) || 
+      (import.meta.env?.VITE_GEMINI_API_KEY) || 
+      ((window as any).GEMINI_API_KEY);
+
+    if (envKey && typeof envKey === 'string' && envKey.trim() !== "" && envKey !== "undefined") {
       availableKeys.push({ key: envKey, isExhausted: false });
     }
   }
@@ -45,7 +50,7 @@ export const sendMessageToGeminiStream = async (
     if (hasKeys) {
       throw new Error("Semua API Key Gemini Anda telah mencapai batas kuota (Exhausted). Silakan reset status kunci di menu Settings.");
     } else {
-      throw new Error("Tidak ada API Key Gemini yang ditemukan. Silakan tambahkan API Key di menu Settings.");
+      throw new Error("Tidak ada API Key Gemini yang ditemukan. \n\nLangkah Perbaikan:\n1. Di Google AI Studio, pastikan API Key sudah diset di menu Settings.\n2. Jika Anda memindahkan App, pastikan file .env atau Config sudah benar.");
     }
   }
 
