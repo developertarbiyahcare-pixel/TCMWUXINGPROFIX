@@ -122,7 +122,8 @@ export const db = {
   patients: {
     getAll: async (): Promise<SavedPatient[]> => {
       const localData = localStorage.getItem('tcm_patients_local');
-      let patients: SavedPatient[] = localData ? JSON.parse(localData) : [];
+      const currentUserUid = auth.currentUser?.uid || 'local-guest';
+      let patients: SavedPatient[] = localData ? (JSON.parse(localData) as SavedPatient[]).filter(p => p.authorUid === currentUserUid) : [];
       
       // If logged in with Google, also fetch from Firestore
       if (auth.currentUser) {

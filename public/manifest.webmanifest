@@ -1,0 +1,31 @@
+{
+  "name": "TCM PRO Indonesia - Pakar Akupunktur & Herbal",
+  "short_name": "TCM PRO",
+  "description": "Sistem Pakar Traditional Chinese Medicine untuk Diagnosis, Akupunktur, dan Herbal.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#faf5ff",
+  "theme_color": "#7e22ce",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "health"],
+  "shortcuts": [
+    {
+      "name": "Chat Diagnosa",
+      "url": "./#chat",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    },
+    {
+      "name": "Input Pasien",
+      "url": "./#new-patient",
+      "icons": [{ "src": "icon.svg", "sizes": "any" }]
+    }
+  ]
+}

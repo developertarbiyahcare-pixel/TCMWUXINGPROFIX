@@ -82,24 +82,78 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
   }
 }
 
+import { auth, db as firestore } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [settings, setPengaturan] = useState<AppSettings | null>(null);
 
+  const lastUidRef = useRef<string | null>(null);
+
   useEffect(() => {
-    const loadSession = async () => {
-      const saved = localStorage.getItem('tcm_active_session');
-      if (saved) {
+    // Listen for Firebase Auth changes
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser: any) => {
+      const currentUid = fbUser?.uid || null;
+      if (lastUidRef.current !== currentUid) {
+        setMessages([
+          { id: 'welcome', role: 'model', text: 'Sistem Siap. Masukkan keluhan pasien untuk analisis cepat atau gunakan Form Input Pasien.', timestamp: new Date() }
+        ]);
+        lastUidRef.current = currentUid;
+      }
+
+      if (fbUser) {
+        // Find existing session to keep role if available
+        const saved = localStorage.getItem('tcm_active_session');
+        let role = 'REGULAR';
+        if (saved) {
+          try { role = JSON.parse(saved).role; } catch (e) {}
+        }
+
+        // Fetch latest role from Firestore if possible
         try {
-          setCurrentUser(JSON.parse(saved));
+          const userSnap = await getDoc(doc(firestore, 'users', fbUser.uid));
+          if (userSnap.exists()) {
+            role = userSnap.data().role || role;
+          }
         } catch (e) {
-          localStorage.removeItem('tcm_active_session');
+          console.error("Role sync error:", e);
+        }
+
+        const newUser: UserAccount = {
+          uid: fbUser.uid,
+          username: fbUser.email || '',
+          password: '',
+          role: role as any,
+          createdAt: Date.now(),
+          provider: 'google'
+        };
+        setCurrentUser(newUser);
+        localStorage.setItem('tcm_active_session', JSON.stringify(newUser));
+      } else {
+        // If not a google user, check if there's a local session
+        const saved = localStorage.getItem('tcm_active_session');
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            if (parsed.provider === 'local') {
+              setCurrentUser(parsed);
+            } else {
+              setCurrentUser(null);
+            }
+          } catch (e) {
+            setCurrentUser(null);
+          }
+        } else {
+          setCurrentUser(null);
         }
       }
       setIsAuthReady(true);
-    };
-    loadSession();
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleResetKeys = async () => {
@@ -375,54 +429,26 @@ const App: React.FC = () => {
 
       <div className="flex-1 flex flex-col h-full bg-purple-50 overflow-hidden relative">
         {/* Top Header with Language Toggle */}
-        <header className="p-4 bg-white/50 border-b border-purple-100 flex justify-between items-center backdrop-blur-md z-30">
-           <div className="flex items-center gap-4">
-             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 bg-purple-100 rounded-lg text-purple-900"><Menu className="w-5 h-5" /></button>
+        <header className="p-3 md:p-4 bg-white/70 border-b border-purple-100 flex justify-between items-center backdrop-blur-xl z-30 sticky top-0">
+           <div className="flex items-center gap-3">
+             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 bg-purple-100 rounded-xl text-purple-900 active:scale-90 transition-transform"><Menu className="w-5 h-5" /></button>
              {currentUser?.provider === 'google' ? (
-               <div className="flex items-center gap-2 px-3 py-1 bg-purple-100 rounded-full border border-purple-200">
-                  <div className="w-2 h-2 rounded-full bg-fuchsia-500 animate-pulse"></div>
-                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-purple-600">
-                    Sync Mode
-                  </span>
+               <div className="flex items-center gap-2 px-2.5 py-1 bg-purple-100/50 rounded-full border border-purple-200/50">
+                  <div className="w-1.5 h-1.5 rounded-full bg-fuchsia-500 animate-pulse"></div>
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-purple-600">Sync</span>
                </div>
              ) : (
-               <div className="flex items-center gap-2 px-3 py-1 bg-emerald-50 rounded-full border border-emerald-100">
-                  <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600">
-                    Local Mode
-                  </span>
+               <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-50 rounded-full border border-emerald-100">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-emerald-600">Local</span>
                </div>
              )}
            </div>
            
-           <div className="flex items-center gap-2 md:gap-4">
-              <button 
-                onClick={() => window.location.reload()}
-                className="p-2 bg-white hover:bg-purple-50 rounded-xl border border-purple-200 transition-all active:scale-95 text-purple-600 shadow-sm"
-                title="Sinkronisasi Data"
-              >
-                <Zap className="w-4 h-4" />
-              </button>
-              
-              <button 
-                onClick={toggleLanguage}
-                className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white hover:bg-purple-50 rounded-xl border border-purple-200 transition-all active:scale-95 group shadow-sm"
-              >
-                <Globe className="w-4 h-4 text-tcm-primary group-hover:rotate-12 transition-transform" />
-                <span className="text-[10px] md:text-xs font-black uppercase tracking-tighter text-purple-900">
-                  {appLanguage === Language.ENGLISH ? "EN" : "ID"}
-                </span>
-              </button>
-              
-              <div className="flex items-center gap-2">
-                <div className="w-9 h-9 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full border border-purple-300 flex items-center justify-center shadow-inner">
-                   <User className="w-5 h-5 text-purple-600" />
-                </div>
-              </div>
-           </div>
+           {/* Right side removed as requested */}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.05),transparent)] pb-20 md:pb-8">
+        <main className="flex-1 overflow-y-auto p-4 md:p-8 scrollbar-hide bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.05),transparent)] pb-24 md:pb-8">
           {activePanel === 'chat' && (
             <div className="max-w-4xl mx-auto space-y-6 pb-20">
               {/* API Key Peringatan Removed */}

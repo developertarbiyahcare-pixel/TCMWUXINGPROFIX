@@ -31,16 +31,17 @@ export const sendMessageToGeminiStream = async (
   onChunk?: (text: string) => void,
   onKeyExhausted?: (key: string) => void
 ) => {
-  const availableKeys = (apiKeys || []).filter(k => !k.isExhausted && k.key.trim() !== "");
+  const availableKeys = [...(apiKeys || []).filter(k => !k.isExhausted && k.key.trim() !== "")];
   
-  if (availableKeys.length === 0) {
-    // Try multiple sources for the environment key
-    const envKey = 
-      (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined) || 
-      (import.meta.env?.VITE_GEMINI_API_KEY) || 
-      ((window as any).GEMINI_API_KEY);
+  // Try multiple sources for the environment key
+  const envKey = 
+    (typeof process !== 'undefined' ? process.env?.GEMINI_API_KEY : undefined) || 
+    (import.meta.env?.VITE_GEMINI_API_KEY) || 
+    ((window as any).GEMINI_API_KEY);
 
-    if (envKey && typeof envKey === 'string' && envKey.trim() !== "" && envKey !== "undefined") {
+  if (envKey && typeof envKey === 'string' && envKey.trim() !== "" && envKey !== "undefined") {
+    // Add platform key as fallback if not already present
+    if (!availableKeys.some(k => k.key === envKey)) {
       availableKeys.push({ key: envKey, isExhausted: false });
     }
   }
@@ -50,16 +51,24 @@ export const sendMessageToGeminiStream = async (
     if (hasKeys) {
       throw new Error("Semua API Key Gemini Anda telah mencapai batas kuota (Exhausted). Silakan reset status kunci di menu Settings.");
     } else {
-      throw new Error("Tidak ada API Key Gemini yang ditemukan. \n\nLangkah Perbaikan:\n1. Di Google AI Studio, pastikan API Key sudah diset di menu Settings.\n2. Jika Anda memindahkan App, pastikan file .env atau Config sudah benar.");
+      throw new Error("Tidak ada API Key Gemini yang ditemukan. Silakan periksa pengaturan atau hubungi admin.");
     }
   }
 
   let lastError: any = null;
-  const maxRetries = Math.min(availableKeys.length, 3);
+  const modelsToTry = [
+    'gemini-3-flash-preview',
+    'gemini-flash-latest',
+    'gemini-3.1-pro-preview',
+    'gemini-1.5-flash-latest',
+    'gemini-1.5-pro-latest'
+  ];
+  const maxRetries = Math.max(availableKeys.length * 2, 6); 
 
   for (let i = 0; i < maxRetries; i++) {
-    const currentKeyEntry = availableKeys[i];
+    const currentKeyEntry = availableKeys[i % availableKeys.length];
     const apiKey = currentKeyEntry.key;
+    const modelToUse = modelsToTry[Math.floor(i / availableKeys.length) % modelsToTry.length] || 'gemini-3-flash-preview';
 
     try {
       const ai = new GoogleGenAI({ apiKey });
@@ -82,7 +91,7 @@ export const sendMessageToGeminiStream = async (
         .slice(-6)
         .map(msg => ({
           role: msg.role === 'user' ? 'user' : 'model',
-          parts: [{ text: msg.text.substring(0, 1000) }] // Truncate long history messages
+          parts: [{ text: msg.text.substring(0, 1000) }] 
         }));
 
       const contents = [
@@ -91,7 +100,7 @@ export const sendMessageToGeminiStream = async (
       ];
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: modelToUse,
         contents: contents,
         config: {
           systemInstruction: getSystemInstruction(language, cdssAnalysis),
@@ -244,7 +253,7 @@ export const sendMessageToGeminiStream = async (
         throw new Error("Gagal memproses format data dari AI. Silakan coba lagi.");
       }
     } catch (error: any) {
-      console.error(`Gemini Error with key ${apiKey.substring(0, 8)}...:`, error);
+      console.error(`Gemini Error with key ${apiKey.substring(0, 8)}... [Model: ${modelToUse}]:`, error);
       lastError = error;
 
       const errMsg = error.message?.toLowerCase() || "";
@@ -252,9 +261,15 @@ export const sendMessageToGeminiStream = async (
       const errCode = error.code || 0;
 
       // Check for permission denied (403 or PERMISSION_DENIED)
-      if (errCode === 403 || errMsg.includes("403") || errMsg.includes("permission_denied") || errMsg.includes("permission denied")) {
-        // Skip this key and try next one. If it's the last key, it will throw.
+      if (errCode === 403 || errStatus === 403 || errMsg.includes("403") || errMsg.includes("permission_denied") || errMsg.includes("permission denied")) {
+        console.warn(`Permission Denied (403) for key ${apiKey.substring(0, 8)}... with model ${modelToUse}. Retrying with another combo if available.`);
         if (onKeyExhausted) onKeyExhausted(apiKey);
+        continue;
+      }
+
+      // Check for Not Found (404)
+      if (errCode === 404 || errStatus === 404 || errMsg.includes("404") || errMsg.includes("not found") || errMsg.includes("not_found")) {
+        console.warn(`Model Not Found (404) for ${modelToUse} with key ${apiKey.substring(0, 8)}... Retrying with next model...`);
         continue;
       }
 
@@ -269,5 +284,9 @@ export const sendMessageToGeminiStream = async (
     }
   }
 
+  if (lastError && (lastError.message?.includes("403") || lastError.message?.includes("permission denied"))) {
+    throw new Error("Izin API Ditolak (403): API Key Anda mungkin tidak valid atau tidak memiliki akses ke model ini. Silakan periksa pengaturan API Key di menu 'Kendali Utama' > 'System Pengaturan'.");
+  }
+  
   throw lastError || new Error("Semua API Key gagal digunakan.");
 };
