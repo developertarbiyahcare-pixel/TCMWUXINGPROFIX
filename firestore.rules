@@ -1,4 +1,5 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
     // Default deny
@@ -6,6 +7,7 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
@@ -14,42 +16,63 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isValidUser(data) {
-      return data.keys().hasAll(['uid', 'username', 'role', 'createdAt']) &&
-             data.uid is string &&
-             data.username is string &&
-             data.role in ['SUPER_SAINT', 'SUPER_USER', 'ADMIN', 'REGULAR'] &&
-             data.createdAt is number;
-    }
-
     function isAdmin() {
-       return isSignedIn() && 
-              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['SUPER_SAINT', 'SUPER_USER', 'ADMIN'];
+      return isSignedIn() && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'ADMIN' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_SAINT' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'SUPER_USER'
+      );
     }
 
-    function isValidPatient(data) {
-      return data.keys().hasAll(['id', 'authorUid', 'patientName', 'timestamp']) &&
-             data.id is string &&
-             data.authorUid == request.auth.uid &&
-             data.patientName is string &&
-             data.timestamp is number;
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
+    // Users Collection
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
-                    (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['username', 'role']));
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'username', 'role', 'createdAt']) &&
+               data.uid is string &&
+               data.username is string &&
+               data.role in ['ADMIN', 'REGULAR', 'SUPER_SAINT', 'SUPER_USER'] &&
+               data.createdAt is number;
+      }
+
+      allow create: if isSignedIn() && request.auth.uid == userId && isValidUser(request.resource.data) &&
+                      (request.resource.data.role == 'REGULAR' || request.auth.token.email in ['developertarbiyahcare@gmail.com', 'nvardi75@gmail.com']);
+      
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) &&
+                      (
+                        // Regular user can't change their own role unless they are the bootstrap admins
+                        (isOwner(userId) && request.resource.data.role == resource.data.role) ||
+                        isAdmin() ||
+                        (request.auth.token.email in ['developertarbiyahcare@gmail.com', 'nvardi75@gmail.com'])
+                      );
     }
 
+    // Patients Collection
     match /patients/{patientId} {
-      allow read: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.authorUid == request.auth.uid || isAdmin());
+      
+      function isValidPatient(data) {
+        return data.keys().hasAll(['id', 'authorUid', 'patientName', 'timestamp']) &&
+               data.id is string &&
+               data.authorUid == request.auth.uid &&
+               data.patientName is string &&
+               data.patientName.size() > 0 &&
+               data.timestamp is number;
+      }
+
       allow create: if isSignedIn() && isValidPatient(request.resource.data);
-      allow update: if isSignedIn() && resource.data.authorUid == request.auth.uid && isValidPatient(request.resource.data);
-      allow delete: if isSignedIn() && resource.data.authorUid == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.authorUid == request.auth.uid || isAdmin()) && isValidPatient(request.resource.data);
+      allow delete: if isSignedIn() && (resource.data.authorUid == request.auth.uid || isAdmin());
     }
 
-    match /settings/{docId} {
+    // Settings Collection
+    match /settings/config {
       allow read: if isSignedIn();
       allow write: if isAdmin();
     }
