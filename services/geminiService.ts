@@ -7,27 +7,109 @@ const getSystemInstruction = (language: Language, cdssAnalysis?: ScoredSyndrome[
   const herbContext = topSyndrome?.herbal_prescription ? `\nRESEP KLASIK DARI CDSS: ${topSyndrome.herbal_prescription}` : '';
 
   return `Anda adalah Pakar Senior TCM (Giovanni Maciocia) dan Ahli Akupunktur Balance Method (Metode Keseimbangan dr. Richard Tan). 
-Tugas: Diagnosis instan dalam JSON.
+Tugas: Diagnosis TNM dalam JSON.
 WAJIB: 
 1. 10-12 titik akupunktur konvensional + Master Tung jika relevan.
 2. ANALISIS: Pisahkan BEN (Akar) dan BIAO (Cabang).
 3. BALANCE METHOD (Acupuncture 1-2-3):
-   - Langkah 1 (SI): Identifikasi Meridian yang Sakit (Sick Meridian) berdasarkan lokasi keluhan.
-   - Langkah 2 (ER): Tentukan Meridian Penyeimbang (Balancing Meridian) menggunakan 5 Sistem:
-     * Sistem 1 (Same Name): SI-BL, SJ-GB, LI-ST, LU-SP, HT-KI, PC-LV.
-     * Sistem 2 (Branching): SI-SP, LU-BL, SJ-KI, HT-GB, LI-LV, PC-ST.
-     * Sistem 3 (Biao-Li): LU-LI, ST-SP, HT-SI, BL-KI, PC-SJ, GB-LV.
-     * Sistem 4 (Clock Opposite): LU-BL, LI-KI, ST-PC, SP-SJ, HT-GB, SI-LV.
-     * Sistem 5 (Clock Neighbor): LU-LV, LI-ST, ST-SP, SP-HT, HT-SI, SI-BL, BL-KI, KI-PC, PC-SJ, SJ-GB, GB-LV, LV-LU.
-   - Langkah 3 (SAN): Pilih titik distal menggunakan Mirroring (Ankle-Wrist, Knee-Elbow, Hip-Shoulder) atau Imaging.
-4. SKOR: Sertakan "score" (0-100) untuk setiap item diferensiasi.${tpContext}${herbContext}
- Gunakan PRINSIP TERAPI dan RESEP KLASIK dari CDSS jika tersedia.
- Lakukan diferensiasi 8 Prinsip dan Organ Zang-Fu.
- OBESITAS: Berikan analisis jika ada indikasi.
- KECANTIKAN: Berikan saran jika relevan.
- 
- Bahasa: ${language}.
- HANYA kembalikan JSON. Jangan ada teks lain sebelum atau sesudah JSON.`;
+   - Langkah 1 (SI): Identifikasi Meridian Sakit.
+   - Langkah 2 (ER): Tentukan Meridian Penyeimbang (S1-S5).
+   - Langkah 3 (SAN): Pilih titik distal (Mirroring/Imaging).
+4. SKOR: Sertakan "score" (0-100) untuk setiap item.
+
+PENTING: Jaga penjelasan di setiap field agar singkat, padat, dan teknis (maks 15-20 kata per field) untuk menghindari pemotongan data.
+${tpContext}${herbContext}
+Lakukan diferensiasi 8 Prinsip dan Zang-Fu.
+
+Bahasa: ${language}.
+HANYA JSON.`;
+};
+
+/**
+ * Robustly parse JSON that might be truncated or wrapped in markdown
+ */
+const robustParseJSON = (text: string) => {
+  let cleanText = text.trim();
+  
+  // Handle markdown blocks
+  if (cleanText.startsWith('```')) {
+    cleanText = cleanText.replace(/^```[a-z]*\n?/, '').replace(/\n?```$/, '').trim();
+  }
+
+  // Attempt standard parse
+  try {
+    return JSON.parse(cleanText);
+  } catch (e) {
+    console.warn("Standard JSON parse failed, attempting repairs...");
+  }
+
+  // Attempt to find the first '{' and last '}'
+  const startIdx = cleanText.indexOf('{');
+  if (startIdx === -1) throw new Error("No JSON object found in response");
+  
+  let jsonCandidate = cleanText.substring(startIdx);
+  
+  // Try to repair truncated JSON by balancing braces/brackets
+  // This is a naive implementation but often works for simple truncations
+  let openBraces = 0;
+  let openBrackets = 0;
+  let inString = false;
+  let escaped = false;
+  let lastValidIdx = 0;
+
+  for (let i = 0; i < jsonCandidate.length; i++) {
+    const char = jsonCandidate[i];
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+    if (!inString) {
+      if (char === '{') openBraces++;
+      if (char === '}') openBraces--;
+      if (char === '[') openBrackets++;
+      if (char === ']') openBrackets--;
+      
+      if (openBraces === 0 && openBrackets === 0) {
+        lastValidIdx = i + 1;
+        break; // Found a complete object
+      }
+    }
+  }
+
+  if (lastValidIdx > 0) {
+    try {
+      return JSON.parse(jsonCandidate.substring(0, lastValidIdx));
+    } catch (e) {
+      // Continue to other methods if this fails
+    }
+  }
+
+  // If still here, it's definitely truncated
+  // Minimal fix: close strings and brackets
+  if (inString) jsonCandidate += '"';
+  while (openBrackets > 0) {
+    jsonCandidate += ']';
+    openBrackets--;
+  }
+  while (openBraces > 0) {
+    jsonCandidate += '}';
+    openBraces--;
+  }
+
+  try {
+    return JSON.parse(jsonCandidate);
+  } catch (e) {
+    console.error("Robust repair failed:", e);
+    throw new Error("Gagal memproses format data (Data terpotong atau tidak valid).");
+  }
 };
 
 export const sendMessageToGeminiStream = async (
@@ -192,11 +274,17 @@ export const sendMessageToGeminiStream = async (
     if (proxyResponse.ok) {
       const result = await proxyResponse.json();
       if (onChunk) onChunk(result.text);
-      return { data: JSON.parse(result.text) };
+      return { data: robustParseJSON(result.text) };
     } else {
-      console.warn("Server-side Gemini proxy failed. Falling back to client-side logic.");
+      const errData = await proxyResponse.json().catch(() => ({}));
+      console.warn("Server-side Gemini proxy failed:", errData.error || proxyResponse.statusText);
+      // If the error is clearly an API key issue, throw it instead of falling back to other broken keys
+      if (errData.error?.includes("API key not valid")) {
+        throw new Error("Server Error: API Key Gemini pada server tidak valid. Silakan hubungi admin untuk memperbarui GEMINI_API_KEY.");
+      }
     }
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message?.includes("Server Error")) throw error;
     console.warn("Server-side Gemini proxy error:", error);
   }
 
@@ -423,25 +511,7 @@ export const sendMessageToGeminiStream = async (
 
       if (onChunk) onChunk(cleanText);
       
-      try {
-        const parsed = JSON.parse(cleanText);
-        return { data: parsed };
-      } catch (parseError) {
-        console.error("JSON Parse Error. Raw:", cleanText);
-        
-        // Attempt to find JSON object with regex if parsing failed
-        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          try {
-            const secondAttempt = JSON.parse(jsonMatch[0]);
-            return { data: secondAttempt };
-          } catch (e) {
-            console.error("Second parse attempt failed");
-          }
-        }
-        
-        throw new Error("Gagal memproses format data dari AI. Silakan coba lagi.");
-      }
+      return { data: robustParseJSON(cleanText) };
     } catch (error: any) {
       console.error(`Gemini Error with key ${apiKey.substring(0, 8)}... [Model: ${modelToUse}]:`, error);
       lastError = error;

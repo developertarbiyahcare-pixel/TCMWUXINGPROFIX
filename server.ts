@@ -70,7 +70,9 @@ async function startServer() {
         config: {
           systemInstruction: systemInstruction,
           responseMimeType: "application/json",
-          responseSchema: responseSchema
+          responseSchema: responseSchema,
+          maxOutputTokens: 8192,
+          temperature: 0.1
         }
       });
 
