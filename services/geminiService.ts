@@ -6,17 +6,43 @@ const getSystemInstruction = (language: Language, cdssAnalysis?: ScoredSyndrome[
   const tpContext = topSyndrome?.treatment_principle?.length ? `\nPRINSIP TERAPI DARI CDSS: ${topSyndrome.treatment_principle.join(', ')}` : '';
   const herbContext = topSyndrome?.herbal_prescription ? `\nRESEP KLASIK DARI CDSS: ${topSyndrome.herbal_prescription}` : '';
 
-  return `Pakar TCM & Ahli Balance Method (Dr. Tan). 
-Tugas: Diagnosis instan JSON.
-WAJIB: 
-1. 10-12 titik Konvensional + Master Tung.
-2. ANALISIS: Akar (BEN) & Cabang (BIAO).
-3. BALANCE METHOD (1-2-3): SI (Sick), ER (Balance S1-S5), SAN (Distal - Mirroring/Imaging).
-4. SKOR: (0-100).
+  return `Pakar Senior TCM & Ahli Balance Method (Dr. Richard Tan).
+Tugas: Diagnosis instan JSON format.
 
-PENTING: Jawaban teknis & singkat (max 10 kata per field).
-${tpContext}${herbContext}
+WAJIB GUNAKAN LOGIKA BALANCE METHOD 1-2-3:
+1. SI (Sick Meridian): Pilih berdasarkan lokasi:
+   - Tumit Belakang/Achilles: BL (Taiyang).
+   - Tumit Dalam/Medial: KI (Shaoyin).
+   - Telapak Kaki: KI (Shaoyin).
+   - Pinggang/Punggung Bawah: BL (Taiyang), GV (Du), KI (Shaoyin).
+   - Paha Depan: ST (Yangming).
+   - Paha Belakang: BL (Taiyang).
+   - Paha Samping/Lateral: GB (Shaoyang).
+   - Lengan: SI/SJ/LI (Yang) atau HT/PC/LU (Yin).
+   - Bahu: Anterior (LU/LI), Lateral (LI/SJ), Posterior (SI/BL/SJ).
 
+2. ER (Balance Systems): Berikan 1-2 pilihan sistem terbaik:
+   - Sistem 1: SI-BL, SJ-GB, LI-ST, LU-SP, HT-KI, PC-LV.
+   - Sistem 2: SI-SP, LU-BL, SJ-KI, HT-GB, LI-LV, PC-ST.
+   - Sistem 3: LU-LI, ST-SP, HT-SI, BL-KI, PC-SJ, GB-LV.
+   - Sistem 4: LU-BL, LI-KI, ST-PC, SP-SJ, HT-GB, SI-LV.
+   - Sistem 5: LU-LV, LI-ST, ST-SP, SP-HT, HT-SI, SI-BL, BL-KI, KI-PC, PC-SJ, SJ-GB, GB-LV, LV-LU.
+
+3. SAN (Point Selection): Gunakan MIRRORING distal:
+   - Sakit di Kaki (Tumit/Paha) -> Tusuk di Tangan (Pergelangan/Lengan).
+   - Sakit di Pinggang -> Tusuk di Sikut/Lengan (Imaging abdomen ke ekstremitas).
+   - Gunakan titik Ashi/Tender distal.
+
+STRUKTUR JSON:
+- conversationalResponse: Singkat & profesional.
+- diagnosis: {
+    recommendedPoints: [10-12 titik konvensional + Master Tung],
+    balanceMethodPoints: [{ system, balancingMeridians, suggestedPoints, explanation }],
+    analysis: { ben, biao, zang_fu, eight_principles },
+    wuxingElemen, lifestyleAdvice
+  }
+
+PENTING: Penjelasan per field max 15 kata. WAJIB jawab SEMUA lokasi nyeri.
 Bahasa: ${language}. HANYA JSON.`;
 };
 
@@ -261,7 +287,7 @@ export const sendMessageToGeminiStream = async (
       body: JSON.stringify({
         contents,
         systemInstruction: getSystemInstruction(language, cdssAnalysis),
-        model: "gemini-1.5-flash",
+        model: "gemini-3-flash-preview",
         responseSchema: responseSchema
       })
     });
@@ -273,13 +299,9 @@ export const sendMessageToGeminiStream = async (
     } else {
       const errData = await proxyResponse.json().catch(() => ({}));
       console.warn("Server-side Gemini proxy failed:", errData.error || proxyResponse.statusText);
-      // If the error is clearly an API key issue, throw it instead of falling back to other broken keys
-      if (errData.error?.includes("API key not valid")) {
-        throw new Error("Server Error: API Key Gemini pada server tidak valid. Silakan hubungi admin untuk memperbarui GEMINI_API_KEY.");
-      }
+      // Don't throw here, let it fall back to client-side keys if available
     }
   } catch (error: any) {
-    if (error.message?.includes("Server Error")) throw error;
     console.warn("Server-side Gemini proxy error:", error);
   }
 

@@ -71,7 +71,7 @@ async function startServer() {
           systemInstruction: systemInstruction,
           responseMimeType: "application/json",
           responseSchema: responseSchema,
-          maxOutputTokens: 2048,
+          maxOutputTokens: 4096,
           temperature: 0.1,
           topP: 0.1
         }
