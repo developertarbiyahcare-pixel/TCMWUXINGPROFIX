@@ -6,11 +6,17 @@ const getSystemInstruction = (language: Language, cdssAnalysis?: ScoredSyndrome[
   const tpContext = topSyndrome?.treatment_principle?.length ? `\nPRINSIP TERAPI DARI CDSS: ${topSyndrome.treatment_principle.join(', ')}` : '';
   const herbContext = topSyndrome?.herbal_prescription ? `\nRESEP KLASIK DARI CDSS: ${topSyndrome.herbal_prescription}` : '';
 
-  return `Anda adalah Pakar Senior TCM (Giovanni Maciocia). 
+  return `Anda adalah Pakar Senior TCM (Giovanni Maciocia) dan Ahli Akupunktur Balance Method (Metode Keseimbangan dr. Richard Tan). 
 Tugas: Diagnosis instan dalam JSON.
-WAJIB: 10-12 titik akupunktur + Master Tung jika relevan.
-ANALISIS: Pisahkan BEN (Akar) dan BIAO (Cabang).
-SKOR: Sertakan "score" (0-100) untuk setiap item diferensiasi.${tpContext}${herbContext}
+WAJIB: 
+1. 10-12 titik akupunktur konvensional + Master Tung jika relevan.
+2. ANALISIS: Pisahkan BEN (Akar) dan BIAO (Cabang).
+3. BALANCE METHOD (Acupuncture 1-2-3):
+   - Identifikasi "Sick Meridian" (Meridian yang sakit).
+   - Gunakan 5 Sistem dr. Tan (S1: Same Name, S2: Branching, S3: Biao-Li, S4: Clock Opposite, S5: Clock Neighbor).
+   - Tentukan "Balancing Meridian" yang paling efektif.
+   - Pilih titik distal pada Balancing Meridian menggunakan konsep Mirroring atau Imaging (Taiji).
+4. SKOR: Sertakan "score" (0-100) untuk setiap item diferensiasi.${tpContext}${herbContext}
 Gunakan PRINSIP TERAPI dan RESEP KLASIK dari CDSS jika tersedia.
 Lakukan diferensiasi 8 Prinsip dan Organ Zang-Fu.
 OBESITAS: Berikan analisis jika ada indikasi.
@@ -117,14 +123,35 @@ export const sendMessageToGeminiStream = async (
                 }
               }
             },
-            wuxingElement: { type: Type.STRING },
+            balanceMethodPoints: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  system: { type: Type.STRING },
+                  balancingMeridians: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  suggestedPoints: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        code: { type: Type.STRING },
+                        description: { type: Type.STRING }
+                      }
+                    }
+                  },
+                  explanation: { type: Type.STRING }
+                }
+              }
+            },
+            wuxingElemen: { type: Type.STRING },
             wuxingRelationships: {
               type: Type.ARRAY,
               items: {
                 type: Type.OBJECT,
                 properties: {
                   type: { type: Type.STRING },
-                  targetElement: { type: Type.STRING },
+                  targetElemen: { type: Type.STRING },
                   description: { type: Type.STRING }
                 }
               }
@@ -301,14 +328,35 @@ export const sendMessageToGeminiStream = async (
                       }
                     }
                   },
-                  wuxingElement: { type: Type.STRING },
+                  balanceMethodPoints: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        system: { type: Type.STRING },
+                        balancingMeridians: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        suggestedPoints: {
+                          type: Type.ARRAY,
+                          items: {
+                            type: Type.OBJECT,
+                            properties: {
+                              code: { type: Type.STRING },
+                              description: { type: Type.STRING }
+                            }
+                          }
+                        },
+                        explanation: { type: Type.STRING }
+                      }
+                    }
+                  },
+                  wuxingElemen: { type: Type.STRING },
                   wuxingRelationships: {
                     type: Type.ARRAY,
                     items: {
                       type: Type.OBJECT,
                       properties: {
                         type: { type: Type.STRING },
-                        targetElement: { type: Type.STRING },
+                        targetElemen: { type: Type.STRING },
                         description: { type: Type.STRING }
                       }
                     }

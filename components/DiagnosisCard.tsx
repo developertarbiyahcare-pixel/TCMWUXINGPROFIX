@@ -124,6 +124,9 @@ ${diagnosis.classical_prescription || 'N/A'}
 TITIK AKUPUNKTUR:
 ${diagnosis.recommendedPoints?.map(p => `${p.code}: ${p.description}`).join('\n') || 'N/A'}
 
+BALANCE METHOD (DR. TAN):
+${diagnosis.balanceMethodPoints?.map(b => `[${b.system}] ${b.balancingMeridians.join('/')}: ${b.suggestedPoints.map(p => p.code).join(', ')} - ${b.explanation}`).join('\n') || 'N/A'}
+
 MASTER TUNG POINTS:
 ${diagnosis.masterTungPoints?.map(p => `${p.code}: ${p.description}`).join('\n') || 'N/A'}
 
@@ -527,6 +530,46 @@ ${diagnosis.lifestyleAdvice}
                  ))}
               </div>
            </div>
+        )}
+
+        {/* BALANCE METHOD SECTION (RICHARD TAN) */}
+        {diagnosis.balanceMethodPoints && diagnosis.balanceMethodPoints.length > 0 && (
+          <div className="mb-8 border border-purple-200 rounded-3xl overflow-hidden bg-white shadow-sm transition-all duration-300">
+            <div className="p-6 bg-purple-50/50">
+              <div className="flex items-center gap-3 mb-4">
+                <Scale className="w-5 h-5 text-purple-600" />
+                <h4 className="font-black text-purple-900 text-base leading-tight">
+                  Balance Method (Metode dr. Richard Tan)
+                </h4>
+              </div>
+              <div className="space-y-6">
+                {diagnosis.balanceMethodPoints.map((rec: any, i: number) => (
+                  <div key={i} className="bg-white border border-purple-100 rounded-2xl p-5 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-black text-purple-600 uppercase tracking-widest">{rec.system}</span>
+                      <div className="flex gap-2">
+                        {rec.balancingMeridians.map((m: string, mi: number) => (
+                          <span key={mi} className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">{m}</span>
+                        ))}
+                      </div>
+                    </div>
+                    <p className="text-xs text-purple-800 mb-4 italic">{rec.explanation}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {rec.suggestedPoints.map((pt: any, pi: number) => (
+                        <div key={pi} className="bg-purple-50 border border-purple-100 p-3 rounded-xl flex flex-col justify-center">
+                          <div className="font-bold text-purple-700 text-xs">{pt.code}</div>
+                          <div className="text-[10px] text-purple-500 mt-0.5 leading-tight">{pt.description}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 text-[10px] text-purple-400 italic bg-white/50 p-3 rounded-xl border border-purple-100">
+                Prinsip 1-2-3 dr. Tan: 1) Tentukan Meridian Terpapar, 2) Tentukan Meridian Penyeimbang (5 Sistem), 3) Pilih Titik Distal (Imaging/Mirroring).
+              </div>
+            </div>
+          </div>
         )}
 
         {/* OBESITY & BEAUTY ACUPUNCTURE */}

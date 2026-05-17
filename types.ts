@@ -76,6 +76,13 @@ export interface SavedPatient {
   notes?: string;
 }
 
+export interface BalanceMethodRecommendation {
+  system: string;
+  balancingMeridians: string[];
+  suggestedPoints: { code: string; description: string }[];
+  explanation: string;
+}
+
 export interface TcmDiagnosisResult {
   patternId: string;
   confidence: number;
@@ -86,6 +93,7 @@ export interface TcmDiagnosisResult {
   };
   recommendedPoints: { code: string; description: string }[];
   masterTungPoints?: { code: string; description: string }[];
+  balanceMethodPoints?: BalanceMethodRecommendation[];
   treatment_principle?: string[];
   classical_prescription?: string;
   lifestyleAdvice: string;
