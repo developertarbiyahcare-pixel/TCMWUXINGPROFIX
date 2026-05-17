@@ -12,18 +12,22 @@ WAJIB:
 1. 10-12 titik akupunktur konvensional + Master Tung jika relevan.
 2. ANALISIS: Pisahkan BEN (Akar) dan BIAO (Cabang).
 3. BALANCE METHOD (Acupuncture 1-2-3):
-   - Identifikasi "Sick Meridian" (Meridian yang sakit).
-   - Gunakan 5 Sistem dr. Tan (S1: Same Name, S2: Branching, S3: Biao-Li, S4: Clock Opposite, S5: Clock Neighbor).
-   - Tentukan "Balancing Meridian" yang paling efektif.
-   - Pilih titik distal pada Balancing Meridian menggunakan konsep Mirroring atau Imaging (Taiji).
+   - Langkah 1 (SI): Identifikasi Meridian yang Sakit (Sick Meridian) berdasarkan lokasi keluhan.
+   - Langkah 2 (ER): Tentukan Meridian Penyeimbang (Balancing Meridian) menggunakan 5 Sistem:
+     * Sistem 1 (Same Name): SI-BL, SJ-GB, LI-ST, LU-SP, HT-KI, PC-LV.
+     * Sistem 2 (Branching): SI-SP, LU-BL, SJ-KI, HT-GB, LI-LV, PC-ST.
+     * Sistem 3 (Biao-Li): LU-LI, ST-SP, HT-SI, BL-KI, PC-SJ, GB-LV.
+     * Sistem 4 (Clock Opposite): LU-BL, LI-KI, ST-PC, SP-SJ, HT-GB, SI-LV.
+     * Sistem 5 (Clock Neighbor): LU-LV, LI-ST, ST-SP, SP-HT, HT-SI, SI-BL, BL-KI, KI-PC, PC-SJ, SJ-GB, GB-LV, LV-LU.
+   - Langkah 3 (SAN): Pilih titik distal menggunakan Mirroring (Ankle-Wrist, Knee-Elbow, Hip-Shoulder) atau Imaging.
 4. SKOR: Sertakan "score" (0-100) untuk setiap item diferensiasi.${tpContext}${herbContext}
-Gunakan PRINSIP TERAPI dan RESEP KLASIK dari CDSS jika tersedia.
-Lakukan diferensiasi 8 Prinsip dan Organ Zang-Fu.
-OBESITAS: Berikan analisis jika ada indikasi.
-KECANTIKAN: Berikan saran jika relevan.
-
-Bahasa: ${language}.
-HANYA kembalikan JSON. Jangan ada teks lain sebelum atau sesudah JSON.`;
+ Gunakan PRINSIP TERAPI dan RESEP KLASIK dari CDSS jika tersedia.
+ Lakukan diferensiasi 8 Prinsip dan Organ Zang-Fu.
+ OBESITAS: Berikan analisis jika ada indikasi.
+ KECANTIKAN: Berikan saran jika relevan.
+ 
+ Bahasa: ${language}.
+ HANYA kembalikan JSON. Jangan ada teks lain sebelum atau sesudah JSON.`;
 };
 
 export const sendMessageToGeminiStream = async (
